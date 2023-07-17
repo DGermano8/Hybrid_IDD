@@ -50,10 +50,9 @@ bcrn.a = @(X,k) k.*[(X(1)*X(2))/(X(1)+X(2)+X(3));
 tic;
 % [X,t] = GillespieDirectMethod(bcrn,TFinal);
 [X,t] = ModifiedNextReactionMethod(bcrn,TFinal);
-% [X,t] = Copy_of_ModifiedNextReactionMethod(bcrn,TFinal);
 % [X,t] = TauLeapingMethod(bcrn,TFinal,0.1);
-
 toc;
+
 % Plot
 figure;
 Xn = reshape([X;X],size(X).*[1,2]); Xn(:,end) = [];
