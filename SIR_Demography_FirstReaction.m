@@ -4,14 +4,12 @@ clear all;
 tic;
 dt = 10^(-4);
 
-mBeta = 1.5/7; % Infect 2 people a week
-mGamma = 0.5/7; % infecion for 1 week
+mBeta = 1.5/7; % Infect "___" people a week
+mGamma = 0.5/7; % infecion for "___" weeks
 mDeath = 1/(2*365); %lifespan
 mBirth = mDeath;
 
 R_0 = mBeta/(mGamma+mDeath)
-
-Tmax = 1.0/(1/(1*365));
 
 N0 = 100000;
 I0 = 5;
@@ -20,17 +18,17 @@ S0 = N0-I0-R0;
 
 t_final = 1000;
 
-% Preinitialising stochasitic info
+% Initialising stochasitic info
 sumILoss = 0; sumIGain = 0; sumIDeath = 0; 
 uILoss = rand; uIGain = rand; uIDeath = rand;
 
-% Preinitialising stochasitic compartment makes for shorter run time
+% Initialising stochasitic compartment makes for shorter run time
 I = zeros(length(0:dt:t_final),1); I(1) = I0;
 tau = zeros(length(0:dt:t_final),1); tau(1) = 0.0;
 TauArray = zeros(1,3);
 i_I = 1; LastIEvent = 1;
 
-% Preinitialising deterministic compartment compartment
+% Initialising deterministic compartment compartment
 R = zeros(length(0:dt:t_final),1); R(1) = R0;
 S = zeros(length(0:dt:t_final),1); S(1) = S0;
 N = zeros(length(0:dt:t_final),1); N(1) = N0;
