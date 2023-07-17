@@ -1,15 +1,19 @@
-mBeta = 1.5/7; % Infect "___" people a week
-mGamma = 0.5/7; % infecion for "___" weeks
-mDeath = 1/(2*365); %lifespan
-mBirth = mDeath;
+function [S,R, time , I,tau] = SIR_Dem_GillespieDirect(mBeta, mGamma, mDeath, N0, I0, t_final, RND_SEED)
+%% Gillespie Direct Method
 
-%   mBeta,mGamma,mBirthS,mDeathS,mDeathI,mDeathR
+rng(RND_SEED);
+
+% An exact stochastic simulation algorithm
+
+% Original Author:
+%   David J. Warne (david.warne@qut.edu.au)
+%         School of Mathematical Sciences
+%         Queensland University of Technology
+
+mBirth = mDeath;
 k = [mBeta; mGamma;   mBirth;     mDeath;      mDeath;      mDeath];
-N0 = 10000;
-I0 = 5;
 S0 = N0-I0;
 R0 = 0;
-TFinal = 1000;
 
 bcrn = struct();
 % kinetic rate parameters
@@ -43,20 +47,28 @@ bcrn.a = @(X,k) k.*[(X(1)*X(2))/(X(1)+X(2)+X(3));
                     X(1);
                     X(2);
                     X(3)];
-                
 
-
-%%
-tic;
-% [X,t] = GillespieDirectMethod(bcrn,TFinal);
-[X,t] = ModifiedNextReactionMethod(bcrn,TFinal);
-% [X,t] = TauLeapingMethod(bcrn,TFinal,0.1);
-toc;
-
-% Plot
-figure;
-Xn = reshape([X;X],size(X).*[1,2]); Xn(:,end) = [];
-tn = reshape([t;t],[1,2*length(t)]); tn(1) = [];
-plot(tn,Xn,'LineWidth',2); xlim([0,TFinal]); ylim([0,max(sum(Xn(:,:),1))]);
-xlabel('t'); ylabel('Number of people');
-legend({'S','I','R'});
+% initialise
+X = [bcrn.X0];
+t = [0];
+while true
+    % compute propensities
+    a = bcrn.a(X(:,end),bcrn.k);
+    % sample exponential waiting time
+    dt = exprnd(1/sum(a));
+    % check if the simulation is finished
+    if t(end) + dt <= t_final
+        % sample the next reaction event
+        j = randsample(bcrn.M,1,true,a);
+        % update copy numbers  
+        X = [X,X(:,end) + bcrn.nu(j,:)'];
+        t = [t, t(end) + dt];
+    else
+        break;
+    end
+end
+S = X(1,:);
+R = X(3,:);
+time = t;
+I = X(2,:);
+tau = t;
