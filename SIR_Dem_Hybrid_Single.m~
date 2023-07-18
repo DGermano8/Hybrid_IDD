@@ -7,7 +7,7 @@ dt = 10^(-4);
 % rng(2);
 
 mBeta = 1.5/7; % Infect "___" people a week
-mGamma = 0.7/7; % infecion for "___" weeks
+mGamma = 0.85/7; % infecion for "___" weeks
 mDeath = 1/(2*365); %lifespan
 mBirth = mDeath;
 
@@ -136,12 +136,12 @@ for ContT=dt:dt:t_final
                 % Bring other compartments up to time tau
                 sumIGain = sumIGain - GainTrap;
                 % Trapazoid Method for IGain 
-                GainTrap = Dtau1*0.5*( mBeta*(Si*I(i_I-1)/Ni) + mBeta*((Si+Dtau1*dSdt)*I(i_I-1))/Ni );
+                GainTrap = Dtau*0.5*( mBeta*(Si*I(i_I-1)/Ni) + mBeta*((Si+Dtau*dSdt)*I(i_I-1))/Ni );
                 sumIGain = sumIGain + GainTrap;
 
                 sumIDeath = sumIDeath - DeathTrap;
                 % Trapazoid Method for IDeath
-                DeathTrap = Dtau1*(mDeath*I(i_I-1));
+                DeathTrap = Dtau*(mDeath*I(i_I-1));
                 sumIDeath = sumIDeath + DeathTrap;
                 
                 Dtau = Dtau-Dtau1;
@@ -156,7 +156,7 @@ for ContT=dt:dt:t_final
                 % Bring other compartments up to time tau
                 sumIGain = sumIGain - GainTrap;
                 % Trapazoid Method for IGain 
-                GainTrap = Dtau1*0.5*( mBeta*(Si*I(i_I-1)/Ni) + mBeta*((Si+Dtau1*dSdt)*I(i_I-1))/Ni );
+                GainTrap = Dtau1*0.5*( mBeta*(Si*I(i_I-1)/Ni) + mBeta*((Si+Dtau*dSdt)*I(i_I-1))/Ni );
                 sumIGain = sumIGain + GainTrap;
 
                 sumILoss = sumILoss - LossTrap;
@@ -168,7 +168,7 @@ for ContT=dt:dt:t_final
                 
             end
             LastIEvent = i_I;
-%             TimePassed = TimePassed + Dtau;
+            TimePassed = TimePassed + Dtau;
 
         else
             stayWhile = false;

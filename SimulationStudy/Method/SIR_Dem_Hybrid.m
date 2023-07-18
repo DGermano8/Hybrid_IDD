@@ -78,11 +78,11 @@ for ContT=dt:dt:t_final
             TauArray(TauArray==0.0) = Inf;
             
             % Identify first event occurance time and type of event
-            [Dtau,pos] = min(TauArray);
+            [Dtau1,pos] = min(TauArray);
             
-            TimePassed = TimePassed + Dtau;
+            TimePassed = TimePassed + Dtau1;
             
-            AbsT = AbsT + Dtau;
+            AbsT = AbsT + Dtau1;
             tau(i_I+1) = AbsT;
             
             % Implement first event
@@ -100,15 +100,15 @@ for ContT=dt:dt:t_final
                 % Bring other compartments up to time tau
                 sumILoss = sumILoss - LossTrap;
                 % Trapazoid Method for ILoss
-                LossTrap = Dtau*(mGamma*I(i_I-1));
+                LossTrap = Dtau1*(mGamma*I(i_I-1));
                 sumILoss = sumILoss + LossTrap;
                 
                 sumIDeath = sumIDeath - DeathTrap;
                 % Trapazoid Method for IDeath
-                DeathTrap = Dtau*(mDeath*I(i_I-1));
+                DeathTrap = Dtau1*(mDeath*I(i_I-1));
                 sumIDeath = sumIDeath + DeathTrap;
                 
-                Dtau = dt-Dtau;
+                Dtau = Dtau-Dtau1;
                 
             elseif(pos == 2)
                 I(i_I+1) = (I(i_I)-1);
@@ -122,15 +122,15 @@ for ContT=dt:dt:t_final
                 % Bring other compartments up to time tau
                 sumIGain = sumIGain - GainTrap;
                 % Trapazoid Method for IGain 
-                GainTrap = Dtau*0.5*( mBeta*(Si*I(i_I-1)/Ni) + mBeta*((Si+Dtau*dSdt)*I(i_I-1))/Ni );
+                GainTrap = Dtau1*0.5*( mBeta*(Si*I(i_I-1)/Ni) + mBeta*((Si+Dtau1*dSdt)*I(i_I-1))/Ni );
                 sumIGain = sumIGain + GainTrap;
 
                 sumIDeath = sumIDeath - DeathTrap;
                 % Trapazoid Method for IDeath
-                DeathTrap = Dtau*(mDeath*I(i_I-1));
+                DeathTrap = Dtau1*(mDeath*I(i_I-1));
                 sumIDeath = sumIDeath + DeathTrap;
                 
-                Dtau = dt-Dtau;
+                Dtau = Dtau-Dtau1;
                 
             elseif(pos == 3)
                 I(i_I+1) = (I(i_I)-1);
@@ -142,19 +142,19 @@ for ContT=dt:dt:t_final
                 % Bring other compartments up to time tau
                 sumIGain = sumIGain - GainTrap;
                 % Trapazoid Method for IGain 
-                GainTrap = Dtau*0.5*( mBeta*(Si*I(i_I-1)/Ni) + mBeta*((Si+Dtau*dSdt)*I(i_I-1))/Ni );
+                GainTrap = Dtau1*0.5*( mBeta*(Si*I(i_I-1)/Ni) + mBeta*((Si+Dtau1*dSdt)*I(i_I-1))/Ni );
                 sumIGain = sumIGain + GainTrap;
 
                 sumILoss = sumILoss - LossTrap;
                 % Trapazoid Method for ILoss
-                LossTrap = Dtau*(mGamma*I(i_I-1));
+                LossTrap = Dtau1*(mGamma*I(i_I-1));
                 sumILoss = sumILoss + LossTrap;
                 
-                Dtau = dt-Dtau;
+                Dtau = Dtau-Dtau1;
                 
             end
             LastIEvent = i_I;
-            TimePassed = TimePassed + Dtau;
+%             TimePassed = TimePassed + Dtau;
 
         else
             stayWhile = false;
