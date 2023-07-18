@@ -15,8 +15,8 @@ I0 = 2;
 RndSeed = RndSeed+1; %61,62, 68
 
 tic;
-[S,R, ~ , I,tau] = SIR_Dem_Hybrid(mBeta, mGamma, mDeath, N0, I0, dt, t_final, RndSeed);
-% [S,R, ~ , I,tau] = SIR_Dem_GillespieDirect(mBeta, mGamma, mDeath, N0, I0, t_final, RndSeed);
+% [S,R, ~ , I,tau] = SIR_Dem_Hybrid(mBeta, mGamma, mDeath, N0, I0, dt, t_final, RndSeed);
+[S,R, ~ , I,tau] = SIR_Dem_GillespieDirect(mBeta, mGamma, mDeath, N0, I0, t_final, RndSeed);
 % [S,R, ~ , I,tau] = SIR_Dem_ModifiedNextReaction(mBeta, mGamma, mDeath, N0, I0, t_final, RndSeed);
 % [S,R, ~ , I,tau] = SIR_Dem_TauLeaping(mBeta, mGamma, mDeath, N0, I0, dt, t_final, RndSeed);
 ClockTime = toc
