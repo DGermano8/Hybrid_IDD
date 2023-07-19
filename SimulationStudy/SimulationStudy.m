@@ -7,12 +7,25 @@ mBeta = 1.4/7; % Infect "___" people a week
 mGamma = 0.7/7; % infecion for "___" weeks
 mDeath = 1/(1.5*365); %lifespan
 
+mBeta = 1.5/7; % Infect "___" people a week
+mGamma = 0.6/7; % infecion for "___" weeks
+mDeath = 1/(2*365); %lifespan
+mBirth = mDeath;
+
 R_0 = mBeta/(mGamma+mDeath)
 
 N0 = 10^5;
 I0 = 2;
 
-RndSeed = RndSeed+1; %61,62, 68
+N0 = 10^7;
+I0 = N0*mBirth*(mBeta - mGamma - mBirth)/(mBeta*(mGamma + mBirth));
+
+S0 = N0*(mGamma + mBirth)/mBeta + 5*10^6;
+R0 = N0 - I0 - S0;
+t_final = 100;
+TimeMesh = 0:dt:t_final;
+
+RndSeed = 1;
 
 tic;
 % [S,R, ~ , I,tau] = SIR_Dem_Hybrid(mBeta, mGamma, mDeath, N0, I0, dt, t_final, RndSeed);
