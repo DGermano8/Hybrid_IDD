@@ -44,33 +44,30 @@ nu = [-1, 1;
       0, -1];
 
 % propensity function
-% Rates :: X -> rates -> propensities
-rates = @(X,k) k.*[(X(1)*X(2));
-                (X(1)*X(2));
-                X(1);
-                X(2)];
+rates = @(X) k.*[(X(1)*X(2));
+                 (X(1)*X(2));
+                 X(1);
+                 X(2)];
 
 % identify which reactions are discrete and which are continuous
 DoDisc = [0; 0];
-DoCont = [1; 1];
 EnforceDo = [1; 1];
 
 %%
-CompartmentSystem  = struct();
+compartmentSystem = struct();
+compartmentSystem.X0 = X0;
+compartmentSystem.rates = rates;
+compartmentSystem.nu = nu;
+compartmentSystem.DoDisc = DoDisc;
+compartmentSystem.EnforceDo = EnforceDo;
 
-CompartmentSystem.X0 =X0;
-CompartmentSystem.tFinal = tFinal;
-CompartmentSystem.k = k;
-CompartmentSystem.rates = rates;
-CompartmentSystem.nu = nu;
-CompartmentSystem.DoDisc = DoDisc;
-CompartmentSystem.DoCont = DoCont;
-CompartmentSystem.EnforceDo = EnforceDo;
-CompartmentSystem.dt = dt;
-CompartmentSystem.SwitchingThreshold = SwitchingThreshold;
+solverConfig = struct();
+solverConfig.tFinal = tFinal;
+solverConfig.dt = dt;
+solverConfig.SwitchingThreshold = SwitchingThreshold;
 
 tic;
-[X,TauArr] = GeneralisedSolverSwitchingRegimes(CompartmentSystem);
+[X,TauArr] = GeneralisedSolverSwitchingRegimes(compartmentSystem, solverConfig);
 toc;
 
 %%
