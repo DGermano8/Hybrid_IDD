@@ -1,16 +1,39 @@
-function [X,TauArr] = GeneralisedSolverSwitchingRegimes(compartmentSystem, solverConfiguration)
+%GENERALISEDSOLVERSWITCHINGREGIMES  Sample from CD-switching process.
+%   [X,TAUARR] = cdsSimulator(X0, RATES, STOICH, TIMES, OPTIONS)
+%   simulates from the continuous-discrete-switching process with flow
+%   RATES and stoichiometry STOICH, starting from initial condition
+%   X0, returning the process states at the times in TIMES. The output
+%   X is a matrix with as many columns as there are species, and as
+%   many rows as there are time points in the output. The output
+%   TAUARR is a vector of time points at which the output is sampled.
+%
+%   OPTIONS is a structure with the following fields:
+%   - dt: the time step used for the Euler-Maruyama discretisation of
+%     the continuous dynamics. Default: 0.01.
+%   - EnforceDo: a boolean indicating whether to enforce the discrete
+%     dynamics to be active at all times. Default: false.
+%   - SwitchingThreshold: a threshold for switching between discrete
+%     and continuous dynamics. Default: 0.1.
+%
+% TODO Currently the times are only not actually used beyond using
+% TIMES(END) as the final time point.
+%
+% TODO Currently the documentation is confused about the name of the
+% function provided.
+%
+% Author: Domenic P.J. Germano (2023).
+function [X,TauArr] = GeneralisedSolverSwitchingRegimes(x0, rates, stoich, times, options)
 
 %%%%%%%%%%%%%%%%% Initilise %%%%%%%%%%%%%%%%%
-X0 = compartmentSystem.X0;
-rates = compartmentSystem.rates;
-nu = compartmentSystem.nu;
-DoDisc = compartmentSystem.DoDisc;
+X0 = x0;
+nu = stoich.nu;
+DoDisc = stoich.DoDisc;
 DoCont = ~DoDisc;
-EnforceDo = compartmentSystem.EnforceDo;
 
-tFinal = solverConfiguration.tFinal;
-dt = solverConfiguration.dt;
-SwitchingThreshold = solverConfiguration.SwitchingThreshold;
+tFinal = times(end);
+dt = options.dt;
+EnforceDo = options.EnforceDo;
+SwitchingThreshold = options.SwitchingThreshold;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [nRates,nCompartments] = size(nu);
