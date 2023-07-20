@@ -1,4 +1,3 @@
-%%
 function [X,TauArr] = GeneralisedSolverSwitchingRegimes(compartmentSystem, solverConfiguration)
 
 %%%%%%%%%%%%%%%%% Initilise %%%%%%%%%%%%%%%%%
@@ -14,10 +13,7 @@ dt = solverConfiguration.dt;
 SwitchingThreshold = solverConfiguration.SwitchingThreshold;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-
-numberRates = length(k);
-numberCompartments = length(X0);
+[nRates,nCompartments] = size(nu);
 
 % identify which compartment is in which reaction:
 compartInNu = nu~=0;
@@ -25,22 +21,24 @@ discCompartment = compartInNu*(DoDisc);
 contCompartment = ~discCompartment;
 
 % initialise discrete sum compartments
-sumTimes = zeros(numberRates,1);
-RandTimes = rand(numberRates,1);
-tauArray = zeros(numberRates,1);
+sumTimes = zeros(nRates,1);
+RandTimes = rand(nRates,1);
+tauArray = zeros(nRates,1);
 
 TimeMesh = 0:dt:tFinal;
 overFlowAllocation = round(2.5*length(TimeMesh));
 
 % initialise solution arrays
-X = zeros(numberCompartments,overFlowAllocation); X(:,1) = X0;
+X = zeros(nCompartments,overFlowAllocation);
+X(:,1) = X0;
 TauArr = zeros(1,overFlowAllocation);
 iters = 1;
 
 % Track Absolute time
-AbsT = 0; 
+AbsT = 0;
 
-Xprev = X0; Xcurr = zeros(numberCompartments,1);
+Xprev = X0;
+Xcurr = zeros(nCompartments,1);
 for ContT=TimeMesh(2:end)
     iters = iters + 1;
 
@@ -52,7 +50,7 @@ for ContT=TimeMesh(2:end)
 
     iters = iters + 1;
     % compute propensities
-    Props = rates(Xprev,k);
+    Props = rates(Xprev);
 
     % Perform the Forward Euler Step
     dXdt = sum(Props.*(contCompartment.*nu),1)';
@@ -61,7 +59,7 @@ for ContT=TimeMesh(2:end)
 
     Dtau = dt;
     stayWhile = true;
-    TimePassed = 0;    
+    TimePassed = 0;
     % Perform the Stochastic Loop
     while stayWhile
 
@@ -69,20 +67,20 @@ for ContT=TimeMesh(2:end)
         Xcurr = X(:,iters);
 
         % Integrate the cummulative wait times using trapazoid method
-        TrapStep = Dtau*0.5*(rates(Xprev,k) + rates(Xcurr,k));
+        TrapStep = Dtau*0.5*(rates(Xprev) + rates(Xcurr));
         sumTimes = sumTimes+TrapStep;
 
-        % identify which events have occured 
+        % identify which events have occured
         IdEventsOccued = (RandTimes < (1 - exp(-sumTimes))).*discCompartment;
         if( sum(IdEventsOccued) > 0)
-            tauArray = zeros(numberRates,1);
+            tauArray = zeros(nRates,1);
             for kk=1:length(IdEventsOccued)
 
                 if(IdEventsOccued(kk))
                     % calculate time tau until event using linearisation of integral:
                     % u_k = 1-exp(- integral_{ti}^{t} f_k(s)ds )
                     ExpInt = exp(-(sumTimes(kk)-TrapStep(kk)));
-                    Props = rates(Xprev,k);
+                    Props = rates(Xprev);
                     tauArray(kk) = log((1-RandTimes(kk))/ExpInt)/(-1*Props(kk));
                 end
             end
@@ -103,7 +101,7 @@ for ContT=TimeMesh(2:end)
 
                 % Bring compartments up to date
                 sumTimes = sumTimes - TrapStep;
-                TrapStep = Dtau1*0.5*(rates(Xprev,k) + rates(Xprev + (Dtau1*(~DoDisc)).*dXdt,k));
+                TrapStep = Dtau1*0.5*(rates(Xprev) + rates(Xprev + (Dtau1*(~DoDisc)).*dXdt));
                 sumTimes = sumTimes+TrapStep;
 
                 % reset timers and sums
@@ -156,9 +154,9 @@ function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp, sumTimes,RandT
                 DoCont(ii) = 0;
                 DoDisc(ii) = 1;
             end
-            
+
             if(OriginalDoCont(ii) && DoDisc(ii))
-                
+
                 % Make sure the solution is sufficiently close to being
                 % integer to jump back to discrete
                 if(abs(1-Xprev(ii)/round(X(ii))) < 10^(-3))
@@ -169,7 +167,7 @@ function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp, sumTimes,RandT
                 end
             end
         end
-        
+
     end
     discCompartmentTmp = zeros(size(compartInNu,1),1);
     contCompartmentTmp = ones(size(compartInNu,1),1);
