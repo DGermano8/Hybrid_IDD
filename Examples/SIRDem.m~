@@ -1,14 +1,20 @@
 clear all;
 close all;
+addpath('Solver');
+
+rand = 
+rng(11)
+
 % 
 %   | mBirth*N
 %   v 
 %   -----   mBeta*I*S/N     -----      mGamma*I     -----
-%   | S |       --->        | I |       --->        |        
-%   -----                   -----
-%   | mDeath*S              | mDeath*I
-%   V                       V
+%   | S |       --->        | I |       --->        | R |        
+%   -----                   -----                   -----
+%   | mDeath*S              | mDeath*I              | mDeath*R
+%   V                       V                       V
 %   
+
 % These define the rates of the system
 mBeta = 1.45/7; % Infect "___" people a week
 mGamma = 0.4/7; % infecion for "___" weeks
@@ -64,7 +70,6 @@ rates = @(X,k) k.*[(X(1)*X(2))/(X(1)+X(2)+X(3));
 
 % identify which reactions are discrete and which are continuous
 DoDisc = [0; 1; 0];
-DoCont = [1; 0; 1];
 % allow S and I to switch, but force R to be continuous
 EnforceDo = [0; 0; 1];
 % allow I to switch, but force S and R to be continuous
@@ -79,7 +84,6 @@ CompartmentSystem.k = k;
 CompartmentSystem.rates = rates;
 CompartmentSystem.nu = nu;
 CompartmentSystem.DoDisc = DoDisc;
-CompartmentSystem.DoCont = DoCont;
 CompartmentSystem.EnforceDo = EnforceDo;
 CompartmentSystem.dt = dt;
 CompartmentSystem.SwitchingThreshold = SwitchingThreshold;

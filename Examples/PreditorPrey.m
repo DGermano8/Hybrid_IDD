@@ -31,10 +31,11 @@ tFinal = 100;
 
 % These are solver options
 dt = 10^(-3);
-SwitchingThreshold = 0.2;
+SwitchingThreshold = [0.2; 20];
 
 % mDeathA rate parameters
-k = [mDeathA; mBirthB;   mBirthA;     mDeathB;];
+kConsts = [mDeathA; mBirthB;   mBirthA;     mDeathB;];
+kTime = @(p,t) [p(1); p(2); p(3); p(4)];
 X0 = [A0;B0];
 
 % stoichiometric matrix
@@ -52,7 +53,6 @@ rates = @(X,k) k.*[(X(1)*X(2));
 
 % identify which reactions are discrete and which are continuous
 DoDisc = [0; 0];
-DoCont = [1; 1];
 EnforceDo = [1; 1];
 
 %%
@@ -60,11 +60,11 @@ CompartmentSystem  = struct();
 
 CompartmentSystem.X0 =X0;
 CompartmentSystem.tFinal = tFinal;
-CompartmentSystem.k = k;
+CompartmentSystem.kConsts = kConsts;
+CompartmentSystem.kTime = kTime;
 CompartmentSystem.rates = rates;
 CompartmentSystem.nu = nu;
 CompartmentSystem.DoDisc = DoDisc;
-CompartmentSystem.DoCont = DoCont;
 CompartmentSystem.EnforceDo = EnforceDo;
 CompartmentSystem.dt = dt;
 CompartmentSystem.SwitchingThreshold = SwitchingThreshold;

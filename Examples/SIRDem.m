@@ -1,6 +1,10 @@
-clear all;
+% clear all;
 close all;
 addpath('Solver');
+
+% randSeed = randSeed+1;
+rng(26)
+
 % 
 %   | mBirth*N
 %   v 
@@ -30,10 +34,11 @@ tFinal = 1000;
 
 % These are solver options
 dt = 10^(-3);
-SwitchingThreshold = 0.2;
+SwitchingThreshold = [0.2; 20];
 
 % kinetic rate parameters
-k = [mBeta; mGamma;   mBirth;     mDeath;      mDeath;      mDeath];
+kConsts =      [mBeta; mGamma;   mBirth;     mDeath;      mDeath;      mDeath];
+kTime = @(p,t) [p(1); p(2); p(3); p(4); p(5); p(6)];
 X0 = [S0;I0;R0];
 
                      
@@ -66,7 +71,6 @@ rates = @(X,k) k.*[(X(1)*X(2))/(X(1)+X(2)+X(3));
 
 % identify which reactions are discrete and which are continuous
 DoDisc = [0; 1; 0];
-DoCont = [1; 0; 1];
 % allow S and I to switch, but force R to be continuous
 EnforceDo = [0; 0; 1];
 % allow I to switch, but force S and R to be continuous
@@ -77,11 +81,11 @@ CompartmentSystem  = struct();
 
 CompartmentSystem.X0 =X0;
 CompartmentSystem.tFinal = tFinal;
-CompartmentSystem.k = k;
+CompartmentSystem.kConsts = kConsts;
+CompartmentSystem.kTime = kTime;
 CompartmentSystem.rates = rates;
 CompartmentSystem.nu = nu;
 CompartmentSystem.DoDisc = DoDisc;
-CompartmentSystem.DoCont = DoCont;
 CompartmentSystem.EnforceDo = EnforceDo;
 CompartmentSystem.dt = dt;
 CompartmentSystem.SwitchingThreshold = SwitchingThreshold;
@@ -107,5 +111,5 @@ subplot(1,2,2)
 plot(X(1,:),X(2,:),'.','linewidth',1.5)
 set(gca, 'YScale', 'log')
 set(gca, 'XScale', 'log')
-ylabel('S')
-xlabel('I')
+ylabel('I')
+xlabel('S')
