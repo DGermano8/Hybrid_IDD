@@ -1,17 +1,17 @@
 %%
-function [X,TauArr] = GeneralisedSolverSwitchingRegimes(CompartmentSystem)
+function [X,TauArr] = GeneralisedSolverSwitchingRegimes(compartmentSystem, solverConfiguration)
 
 %%%%%%%%%%%%%%%%% Initilise %%%%%%%%%%%%%%%%%
-X0 = CompartmentSystem.X0;
-tFinal = CompartmentSystem.tFinal;
-k = CompartmentSystem.k;
-rates = CompartmentSystem.rates;
-nu = CompartmentSystem.nu;
-DoDisc = CompartmentSystem.DoDisc;
-DoCont = CompartmentSystem.DoCont;
-EnforceDo = CompartmentSystem.EnforceDo;
-dt = CompartmentSystem.dt;
-SwitchingThreshold = CompartmentSystem.SwitchingThreshold;
+X0 = compartmentSystem.X0;
+rates = compartmentSystem.rates;
+nu = compartmentSystem.nu;
+DoDisc = compartmentSystem.DoDisc;
+DoCont = ~DoDisc;
+EnforceDo = compartmentSystem.EnforceDo;
+
+tFinal = solverConfiguration.tFinal;
+dt = solverConfiguration.dt;
+SwitchingThreshold = solverConfiguration.SwitchingThreshold;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
