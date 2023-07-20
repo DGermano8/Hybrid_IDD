@@ -1,34 +1,27 @@
 clear all;
 close all;
 
-% rng(3)
+rng(4)
 
-% These define the rates of the system
 mBeta = 1.45/7; % Infect "___" people a week
-mGamma = 0.9/7; % infecion for "___" weeks
+mGamma = 0.4/7; % infecion for "___" weeks
 mDeath = 1/(2*365); %lifespan
 mBirth = mDeath;
-numberRates = 6;
 
 R_0 = mBeta/(mGamma+mDeath)
 
-% These are the initial conditions
 N0 = 10^5;
 I0 = 2;
 R0 = 0;
 S0 = N0-I0-R0;
-X0 = [S0;I0;R0];
-numberCompartments = 3;
 
-% How long to simulate for
-tFinal = 1000;
-
-
-% These are solver options
 dttThreshold = 10^(-5); t_iter_max = 100;
 dt = 10^(-3);
-SwitchingThreshold = 0.2;
+tFinal = 1000;
 
+numberCompartments = 3;
+numberRates = 6;
+SwitchingThreshold = 0.25;
 %%
 
 % kinetic rate parameters
@@ -42,7 +35,6 @@ nuMinus = [1,1,0;
            1,0,0;
            0,1,0;
            0,0,1];
-       
 % product stoichiometries
 nuPlus = [0,2,0;
           0,0,1;
@@ -52,29 +44,41 @@ nuPlus = [0,2,0;
           0,0,0];
 % stoichiometric matrix
 nu = nuPlus - nuMinus;
-
+% initial copy numbers
+X0 = [S0;I0;R0];
 % propensity function
-% Rates :: X -> rates -> propensities
 rates = @(X,k) k.*[(X(1)*X(2))/(X(1)+X(2)+X(3));
                 X(2);
                 X(1)+X(2)+X(3);
                 X(1);
                 X(2);
                 X(3)];
-
+            
+% identify which compartment is in which reaction:
+compartInNu = [1 1 1;
+               0 1 0;
+               1 0 0;
+               1 0 0;
+               0 1 0;
+               0 0 1];
+                 
 % identify which reactions are discrete and which are continuous
 DoDisc = [0; 1; 0];
 DoCont = [1; 0; 1];
 EnforceDo = [0; 0; 1];
+discCompartment = [1; 1; 0; 0; 1; 0];
+contCompartment = [1; 1; 1; 1; 1; 1] - discCompartment;
 
+% DoDisc = [1; 1; 1];
+% DoCont = [0; 0; 0];
+% discCompartment = [1; 1; 1; 1; 1; 1];
+% contCompartment = [1; 1; 1; 1; 1; 1] - discCompartment;
 
-%%
+% DoDisc = [0; 0; 0];
+% DoCont = [1; 1; 1];
+% discCompartment = [0; 0; 0; 0; 0; 0];
+% contCompartment = [1; 1; 1; 1; 1; 1] - discCompartment;
 
-% identify which compartment is in which reaction:
-compartInNu = nu~=0;
-
-discCompartment = compartInNu*(DoDisc);
-contCompartment = ~discCompartment;
 % initialise discrete sum compartments
 sumTimes = zeros(numberRates,1);
 RandTimes = rand(numberRates,1);
@@ -237,7 +241,6 @@ xlabel('Time')
 
 
 %%
-
 
 function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp, sumTimes,RandTimes] = IsDiscrete(X,nu,rates,k,dt,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes)
 

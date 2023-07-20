@@ -4,77 +4,63 @@ close all;
 % rng(3)
 
 % These define the rates of the system
-mBeta = 1.45/7; % Infect "___" people a week
-mGamma = 0.9/7; % infecion for "___" weeks
-mDeath = 1/(2*365); %lifespan
-mBirth = mDeath;
-numberRates = 6;
-
-R_0 = mBeta/(mGamma+mDeath)
+mAlpha = 2;
+mBeta = 1;
+mGamma = 20;
+numberRates = 3;
 
 % These are the initial conditions
-N0 = 10^5;
-I0 = 2;
-R0 = 0;
-S0 = N0-I0-R0;
-X0 = [S0;I0;R0];
-numberCompartments = 3;
+A0 = 50;
+B0 = 50;
+X0 = [A0;
+      B0];
+numberCompartments = 2;
 
 % How long to simulate for
-tFinal = 1000;
-
+tFinal = 5;
 
 % These are solver options
 dttThreshold = 10^(-5); t_iter_max = 100;
-dt = 10^(-3);
-SwitchingThreshold = 0.2;
-
+dt = 10^(-4);
+SwitchingThreshold = 10;
 %%
 
 % kinetic rate parameters
-k = [mBeta; mGamma;   mBirth;     mDeath;      mDeath;      mDeath];
+k = [mAlpha; mBeta; mGamma];
 
                      
 % reactant stoichiometries
-nuMinus = [1,1,0;
-           0,1,0;
-           0,0,0;
-           1,0,0;
-           0,1,0;
-           0,0,1];
-       
+nuMinus = [0,0;
+           1,0;
+           0,1];
 % product stoichiometries
-nuPlus = [0,2,0;
-          0,0,1;
-          1,0,0;
-          0,0,0;
-          0,0,0;
-          0,0,0];
+nuPlus = [1,0;
+          0,1;
+          0,0];
 % stoichiometric matrix
 nu = nuPlus - nuMinus;
 
 % propensity function
 % Rates :: X -> rates -> propensities
-rates = @(X,k) k.*[(X(1)*X(2))/(X(1)+X(2)+X(3));
-                X(2);
-                X(1)+X(2)+X(3);
-                X(1);
-                X(2);
-                X(3)];
-
+rates = @(X,k) k.*[X(1);
+                X(1)*X(2);
+                X(2)];
+            
+% identify which compartment is in which reaction:
+compartInNu = nu~=0;
+                 
 % identify which reactions are discrete and which are continuous
-DoDisc = [0; 1; 0];
-DoCont = [1; 0; 1];
-EnforceDo = [0; 0; 1];
+DoDisc = [1; 0];
+DoCont = [0; 1];
+EnforceDo = [1; 1];
+
 
 
 %%
 
-% identify which compartment is in which reaction:
-compartInNu = nu~=0;
-
-discCompartment = compartInNu*(DoDisc);
+discCompartment = [1; 1; 0;];
 contCompartment = ~discCompartment;
+
 % initialise discrete sum compartments
 sumTimes = zeros(numberRates,1);
 RandTimes = rand(numberRates,1);
@@ -93,7 +79,7 @@ tic;
 Xprev = X0; Xcurr = zeros(numberCompartments,1);
 for ContT=TimeMesh(2:end)
     
-    [DoDisc, DoCont, discCompartment, contCompartment, sumTimes, RandTimes] = IsDiscrete(Xprev,nu,rates,k,dt,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes);
+    [DoDisc, DoCont, discCompartment, contCompartment] = IsDiscrete(Xprev,nu,rates,k,dt,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu);
     
     %%% Computes 
     % compute propensities
@@ -140,9 +126,52 @@ for ContT=TimeMesh(2:end)
 
                 if(IdEventsOccued(kk))
                     % calculate time tau
-                    ExpInt = exp(-(sumTimes(kk)-TrapStep(kk)));
-                    Props = rates(Xprev,k);
-                    tauArray(kk) = log((1-RandTimes(kk))/ExpInt)/(-1*Props(kk));
+                    DeltaTrap = log(1/(1-RandTimes(kk)))-(sumTimes(kk)-TrapStep(kk));
+
+                    % this uses symbolic matlab - super slow!!! Think of
+                    % something better!
+%                     PropsT = rates(Xprev,k) + rates(Xprev + (t*(~DoDisc)).*dXdt,k);
+%                     Rnumeric = vpa(solve(0.5*t*PropsT(kk)- DeltaTrap,t));
+%                     Rnumeric = double(solve(0.5*t*PropsT(kk)- DeltaTrap,t));
+%                     try
+%                         tauArray(kk) = Rnumeric(Rnumeric > 0);
+%                     end
+                    % Numerically find the time!!!!
+                    dtt = dttThreshold; t_ii = 0;
+                    FindingT = true;
+                    while FindingT
+                        t_ii = t_ii + dtt;
+                        PropsT = rates(Xprev,k) + rates(Xprev + (t_ii*(~DoDisc)).*dXdt,k);
+                        Sigma_ii = 0.5*t_ii*PropsT(kk)- DeltaTrap;
+                        if Sigma_ii > 0
+                            tauArray(kk) = t_ii;
+                            FindingT = false;
+                        end
+                        if t_ii > dt
+                            FindingT = false;
+                        end
+                    end
+                
+%%%%%%
+%                     t_iter = 1;
+%                     Sigma_ii = 1;
+%                     t_ii = 0.5*dt;
+%                     while (abs(Sigma_ii) > dttThreshold)
+%                         PropsT = rates(Xprev,k) + rates(Xprev + (t_ii*(~DoDisc)).*dXdt,k);
+%                         Sigma_ii = 0.5*t_ii*PropsT(kk)- DeltaTrap;
+%                         if(Sigma_ii > 0)
+%                             t_ii = 0.5*t_ii;
+%                         elseif(Sigma_ii < 0)
+%                             t_ii = 1.5*t_ii;
+%                         end
+%                         
+%                         if t_iter > t_iter_max
+%                             break;
+%                         end
+%                         t_iter = t_iter + 1;
+%                     end
+%                     tauArray(kk) = t_ii;
+                    
                 end
             end
             if(sum(tauArray) > 0)
@@ -199,47 +228,17 @@ end
 toc;
 
 %%
-
 figure;
-subplot(2,2,1)
 hold on;
-plot(TauArr(1,:),X(1,:),'.','linewidth',1.5)
-plot(TauArr(2,:),X(2,:),'.','linewidth',1.5)
-plot(TauArr(3,:),X(3,:),'.','linewidth',1.5)
-legend('S','I','R')
-axis([0 tFinal 0 1.1*N0])
+plot(TauArr(1,:),sqrt(X(1,:)),'.','linewidth',1.5)
+plot(TauArr(2,:),sqrt(X(2,:)),'.','linewidth',1.5)
+legend('A','B')
 
-hold off;
-
-subplot(2,2,2)
-TauArr_i = TauArr(1,:);
-TauArr_ii = TauArr_i(TauArr_i > 0);
-h = histogram(TauArr_ii, 0:100*dt:tFinal);
-axis([0 tFinal 0 1.25*max(h.BinCounts)])
-ylabel('# Stochastic Events per 100dt')
-xlabel('Time')
-
-subplot(2,2,3)
-TauArr_i = TauArr(2,:);
-TauArr_ii = TauArr_i(TauArr_i > 0);
-h = histogram(TauArr_ii, 0:100*dt:tFinal);
-axis([0 tFinal 0 1.25*max(h.BinCounts)])
-ylabel('# Stochastic Events per 100dt')
-xlabel('Time')
-
-subplot(2,2,4)
-TauArr_i = TauArr(3,:);
-TauArr_ii = TauArr_i(TauArr_i > 0);
-h = histogram(TauArr_ii, 0:100*dt:tFinal);
-axis([0 tFinal 0 1.25*max(h.BinCounts)])
-ylabel('# Stochastic Events per 100dt')
-xlabel('Time')
-
+axis([0 tFinal 0 1.1*sqrt(max(max(X)))])
 
 %%
 
-
-function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp, sumTimes,RandTimes] = IsDiscrete(X,nu,rates,k,dt,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes)
+function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp] = IsDiscrete(X,nu,rates,k,dt,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu);
 
     OriginalDoDisc = DoDisc;
     OriginalDoCont = DoCont;
@@ -264,10 +263,6 @@ function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp, sumTimes,RandT
             for jj = 1:size(compartInNu,1)
                 if(DoDisc(ii) && compartInNu(jj,ii))
                     discCompartmentTmp(jj) = 1;
-                    if(~OriginalDoDisc(ii))
-                        sumTimes(jj) = 0.0;
-                        RandTimes(jj) = rand;
-                    end
                 end
             end
         end
