@@ -11,26 +11,26 @@ rng(26)
 %      |                                               |
 %      v          (1)                      (2)         v
 %   ------  mB*mBeta*I_M*S_H   ------    mGamma*I_H    ------
-%   | S_H |       --->         | I_H |      --->      | R_H |        
+%   | S_H |       --->         | I_H |      --->      | R_H |
 %   ------         ^            ------                 ------
-%               ...:        	   :   
-%               :                  .....               
-%               :                      :         
+%               ...:        	   :
+%               :                  .....
+%               :                      :
 %            ------   (4)     ------   v (5)   ------   (6)
 %           | I_M |    <---  | E_M |  <-----  | S_M | <-- mBirth*N_M
-%           ------   mG*E_M   ------  mB*I_H   ------   
-%                 |              |               | 
+%           ------   mG*E_M   ------  mB*I_H   ------
+%                 |              |               |
 %                 v              v               v
 %             mDeath*I_M     mDeath*E_M      mDeath*S_M
 %               (7)              (8)            (9)
 %
 % These define the rates of the system
-mB = 1;          % 10 bites a day 
+mB = 1;          % 10 bites a day
 mBeta = 0.5;      % Successful transfer of parasite
 mGamma = 1/7;     % 1 week to recover
 mOmega = 1/(7); % 1 yeah of immunity
 mG = 0.5;
-mDeath = 0.25; 
+mDeath = 0.25;
 mBirth = mDeath;
 
 % These are the initial conditions
