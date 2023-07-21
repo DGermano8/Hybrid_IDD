@@ -19,7 +19,8 @@
 % TIMES(END) as the final time point.
 %
 % TODO Currently the documentation is confused about the name of the
-% function provided.
+% function provided and the default values for options are not
+% respected.
 %
 % Author: Domenic P.J. Germano (2023).
 function [X,TauArr] = GeneralisedSolverSwitchingRegimes(x0, rates, stoich, times, options)
