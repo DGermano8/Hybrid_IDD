@@ -3,7 +3,7 @@ close all;
 addpath('Solver');
 
 % randSeed = randSeed+1;
-rng(26)
+% rng(26)
 
 %
 %   | mBirth*N
@@ -17,11 +17,11 @@ rng(26)
 
 % These define the rates of the system
 mBeta = 1.45/7; % Infect "___" people a week
-mGamma = 0.4/7; % infecion for "___" weeks
+mGamma = 0.9/7; % infecion for "___" weeks
 mDeath = 1/(2*365); %lifespan
 mBirth = mDeath;
 
-R_0 = mBeta/(mGamma+mDeath);
+R_0 = mBeta/(mGamma+mDeath)
 
 % These are the initial conditions
 N0 = 10^5;

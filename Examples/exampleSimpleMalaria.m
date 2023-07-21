@@ -25,10 +25,10 @@ rng(26)
 %               (7)              (8)            (9)
 %
 % These define the rates of the system
-mB = 1;          % 10 bites a day
-mBeta = 0.5;      % Successful transfer of parasite
-mGamma = 1/7;     % 1 week to recover
-mOmega = 1/(7); % 1 yeah of immunity
+mB = 10;          % 10 bites a day
+mBeta = 0.01;      % Successful transfer of parasite
+mGamma = 0.5;     % 1 week to recover
+mOmega = 0.1; % 1 yeah of immunity
 mG = 0.5;
 mDeath = 0.25;
 mBirth = mDeath;
@@ -50,7 +50,7 @@ X0 = [SH0;IH0;RH0;SM0;EM0;IM0];
 tFinal = 100;
 
 % These are solver options
-dt = 10^(-5);
+dt = 10^(-4);
 SwitchingThreshold = [0.2; 20];
 
 
@@ -71,20 +71,20 @@ nu = [-1    1    0    0    0   0;  % 1
 %              [1   2      3       4       5   6       7     ]
 kConsts =      [mB; mBeta; mGamma; mOmega; mG; mBirth; mDeath];
 %              [1          2     3     4     5     6                7     8     9]
-kTime = @(p,t) [p(1)*p(2); p(3); p(4); p(5); p(1); p(6)*(1+cos(t)); p(7); p(7); p(7)];
+kTime = @(p,t) [p(1)*p(2); p(3); p(4); p(5); p(1); p(6)*(1+cos(t/(2*pi))); p(7); p(7); p(7)];
 % propensity function
 rates = @(X,t) kTime(kConsts, t).* [(X(1)*X(6));      % 1
                                     X(2);             % 2
                                     X(3);             % 3
                                     X(5);             % 4
-                                    X(6);             % 5
-                                    X(4)+X(5)+X(6); % 6
+                                    X(2);             % 5
+                                    X(4)+X(5)+X(6);   % 6
                                     X(6);             % 7
                                     X(5);             % 8
                                     X(4)];            % 9
 
 % identify which reactions are discrete and which are continuous
-DoDisc = [0; 0; 0; 0; 0; 0];
+DoDisc = [1; 1; 1; 0; 0; 0];
 % allow S and I to switch, but force R to be continuous
 EnforceDo = [1; 1; 1; 1; 1; 1];
 % allow I to switch, but force S and R to be continuous
@@ -114,7 +114,7 @@ plot(TauArr,X(1,:),'.','linewidth',1.5)
 plot(TauArr,X(2,:),'.','linewidth',1.5)
 plot(TauArr,X(3,:),'.','linewidth',1.5)
 legend('S_H','I_H','R_H')
-axis([0 tFinal 0 1.1*NH0])
+axis([0 tFinal 0 1.1*max(max(X(1:3,:)))])
 hold off;
 
 subplot(1,2,2)
@@ -123,5 +123,5 @@ plot(TauArr,X(4,:),'.','linewidth',1.5)
 plot(TauArr,X(5,:),'.','linewidth',1.5)
 plot(TauArr,X(6,:),'.','linewidth',1.5)
 legend('S_M','E_M','I_M')
-axis([0 tFinal 0 1.1*NM0])
+axis([0 tFinal 0 1.1*max(max(X(4:6,:)))])
 hold off

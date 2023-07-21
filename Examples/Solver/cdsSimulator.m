@@ -10,8 +10,8 @@
 %   OPTIONS is a structure with the following fields:
 %   - dt: the time step used for the Euler-Maruyama discretisation of
 %     the continuous dynamics. Default: 0.01.
-%   - EnforceDo: a boolean indicating whether to enforce the discrete
-%     dynamics to be active at all times. Default: false.
+%   - EnforceDo: a boolean indicating whether to enforce the discrete or
+%     cont inuous dynamics to be active at all times. Default: false.
 %   - SwitchingThreshold: a threshold for switching between discrete
 %     and continuous dynamics. Default: 0.1.
 %
@@ -183,12 +183,14 @@ function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp, sumTimes,RandT
             end
 
             if(OriginalDoCont(ii) && DoDisc(ii))
-
                 % This needs a better solution \TODO
                 if(Xprev(ii) < SwitchingThreshold(2))
                 	Xprev(ii) = round(X(ii));
                 end
+            elseif(DoDisc(ii) && OriginalDoDisc(ii) && ~isinteger(Xprev(ii)))
+                Xprev(ii) = round(X(ii));
             end
+            
         end
 
     end
