@@ -5,15 +5,15 @@ addpath('Solver');
 % randSeed = randSeed+1;
 rng(26)
 
-% 
+%
 %   | mBirth*N
-%   v 
+%   v
 %   -----   mBeta*I*S/N     -----      mGamma*I     -----
-%   | S |       --->        | I |       --->        | R |        
+%   | S |       --->        | I |       --->        | R |
 %   -----                   -----                   -----
 %   | mDeath*S              | mDeath*I              | mDeath*R
 %   V                       V                       V
-%   
+%
 
 % These define the rates of the system
 mBeta = 1.45/7; % Infect "___" people a week
@@ -37,11 +37,9 @@ dt = 10^(-3);
 SwitchingThreshold = [0.2; 20];
 
 % kinetic rate parameters
-kConsts =      [mBeta; mGamma;   mBirth;     mDeath;      mDeath;      mDeath];
-kTime = @(p,t) [p(1); p(2); p(3); p(4); p(5); p(6)];
 X0 = [S0;I0;R0];
 
-                     
+
 % reactant stoichiometries
 nuMinus = [1,1,0;
            0,1,0;
@@ -49,7 +47,7 @@ nuMinus = [1,1,0;
            1,0,0;
            0,1,0;
            0,0,1];
-       
+
 % product stoichiometries
 nuPlus = [0,2,0;
           0,0,1;
@@ -61,13 +59,13 @@ nuPlus = [0,2,0;
 nu = nuPlus - nuMinus;
 
 % propensity function
-% Rates :: X -> rates -> propensities
-rates = @(X,k) k.*[(X(1)*X(2))/(X(1)+X(2)+X(3));
-                X(2);
-                X(1)+X(2)+X(3);
-                X(1);
-                X(2);
-                X(3)];
+k = [mBeta; mGamma; mBirth; mDeath; mDeath; mDeath];
+rates = @(X,t) k.*[(X(1)*X(2))/(X(1)+X(2)+X(3));
+                 X(2);
+                 X(1)+X(2)+X(3);
+                 X(1);
+                 X(2);
+                 X(3)];
 
 % identify which reactions are discrete and which are continuous
 DoDisc = [0; 1; 0];
@@ -77,21 +75,26 @@ EnforceDo = [0; 0; 1];
 % EnforceDo = [1; 0; 1];
 
 %%
-CompartmentSystem  = struct();
+stoich = struct();
+stoich.nu = nu;
+stoich.DoDisc = DoDisc;
+solTimes = 0:dt:tFinal;
+myOpts = struct();
+myOpts.EnforceDo = EnforceDo;
+myOpts.dt = dt;
+myOpts.SwitchingThreshold = SwitchingThreshold;
 
-CompartmentSystem.X0 =X0;
-CompartmentSystem.tFinal = tFinal;
-CompartmentSystem.kConsts = kConsts;
-CompartmentSystem.kTime = kTime;
-CompartmentSystem.rates = rates;
-CompartmentSystem.nu = nu;
-CompartmentSystem.DoDisc = DoDisc;
-CompartmentSystem.EnforceDo = EnforceDo;
-CompartmentSystem.dt = dt;
-CompartmentSystem.SwitchingThreshold = SwitchingThreshold;
 
 tic;
-[X,TauArr] = GeneralisedSolverSwitchingRegimes(CompartmentSystem);
+% profile on
+[X,TauArr] = cdsSimulator(X0, rates, stoich, solTimes, myOpts);
+% profile off
+% profile viewer
+% NOTE when I profiled this, it looked like calls to the rate function
+% where the most expensive part of the evaluation so I don't think
+% that the allocation of a dynamic array is going to be a problem.
+% There are stacks and exponentially growing allocations if this ends
+% up changing.
 toc;
 
 %%
