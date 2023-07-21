@@ -73,15 +73,15 @@ kConsts =      [mB; mBeta; mGamma; mOmega; mG; mBirth; mDeath];
 %              [1          2     3     4     5     6                7     8     9]
 kTime = @(p,t) [p(1)*p(2); p(3); p(4); p(5); p(1); p(6)*(1+cos(t)); p(7); p(7); p(7)];
 % propensity function
-rates = @(X,t) kTimes(kConsts, t).* [(X(1)*X(6));      % 1
-                                     X(2);             % 2
-                                     X(3);             % 3
-                                     X(5);             % 4
-                                     X(6);             % 5
-                                     X(4)+X(5)+X(6); % 6
-                                     X(6);             % 7
-                                     X(5);             % 8
-                                     X(4)];            % 9
+rates = @(X,t) kTime(kConsts, t).* [(X(1)*X(6));      % 1
+                                    X(2);             % 2
+                                    X(3);             % 3
+                                    X(5);             % 4
+                                    X(6);             % 5
+                                    X(4)+X(5)+X(6); % 6
+                                    X(6);             % 7
+                                    X(5);             % 8
+                                    X(4)];            % 9
 
 % identify which reactions are discrete and which are continuous
 DoDisc = [0; 0; 0; 0; 0; 0];
@@ -91,21 +91,18 @@ EnforceDo = [1; 1; 1; 1; 1; 1];
 % EnforceDo = [1; 0; 1];
 
 %%
-CompartmentSystem  = struct();
 
-CompartmentSystem.X0 =X0;
-CompartmentSystem.tFinal = tFinal;
-CompartmentSystem.kConsts = kConsts;
-CompartmentSystem.kTime = kTime;
-CompartmentSystem.rates = rates;
-CompartmentSystem.nu = nu;
-CompartmentSystem.DoDisc = DoDisc;
-CompartmentSystem.EnforceDo = EnforceDo;
-CompartmentSystem.dt = dt;
-CompartmentSystem.SwitchingThreshold = SwitchingThreshold;
+stoich = struct();
+stoich.nu = nu;
+stoich.DoDisc = DoDisc;
+solTimes = 0:dt:tFinal;
+myOpts = struct();
+myOpts.EnforceDo = EnforceDo;
+myOpts.dt = dt;
+myOpts.SwitchingThreshold = SwitchingThreshold;
 
 tic;
-[X,TauArr] = GeneralisedSolverSwitchingRegimes(CompartmentSystem);
+[X,TauArr] = cdsSimulator(X0, rates, stoich, solTimes, myOpts);
 toc;
 
 %%
