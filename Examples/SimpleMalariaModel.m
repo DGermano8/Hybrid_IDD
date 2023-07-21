@@ -53,13 +53,8 @@ tFinal = 100;
 dt = 10^(-5);
 SwitchingThreshold = [0.2; 20];
 
-% kinetic rate parameters
-%              [1   2      3       4       5   6       7     ]
-kConsts =      [mB; mBeta; mGamma; mOmega; mG; mBirth; mDeath];
-%              [1          2     3     4     5     6                7     8     9]
-kTime = @(p,t) [p(1)*p(2); p(3); p(4); p(5); p(1); p(6)*(1+cos(t)); p(7); p(7); p(7)];
 
-                     
+
 % stoichiometric matrix
 %   [S_H; I_H; R_H; S_M; E_M; I_M];
 nu = [-1    1    0    0    0   0;  % 1
@@ -71,18 +66,22 @@ nu = [-1    1    0    0    0   0;  % 1
       0     0    0    0    0  -1;  % 7
       0     0    0    0   -1   0;  % 8
       0     0    0   -1    0   0]; % 9
-    
+
+% kinetic rate parameters
+%              [1   2      3       4       5   6       7     ]
+kConsts =      [mB; mBeta; mGamma; mOmega; mG; mBirth; mDeath];
+%              [1          2     3     4     5     6                7     8     9]
+kTime = @(p,t) [p(1)*p(2); p(3); p(4); p(5); p(1); p(6)*(1+cos(t)); p(7); p(7); p(7)];
 % propensity function
-% Rates :: X -> rates -> propensities
-rates = @(X,k) k.*[(X(1)*X(6));   % 1
-                X(2);             % 2
-                X(3);             % 3
-                X(5);             % 4
-                X(6);             % 5
-                X(4)+X(5)+X(6);   % 6
-                X(6);             % 7
-                X(5);             % 8
-                X(4)];            % 9
+rates = @(X,t) kTimes(kConsts, t).* [(X(1)*X(6));      % 1
+                                     X(2);             % 2
+                                     X(3);             % 3
+                                     X(5);             % 4
+                                     X(6);             % 5
+                                     X(4)+X(5)+X(6); % 6
+                                     X(6);             % 7
+                                     X(5);             % 8
+                                     X(4)];            % 9
 
 % identify which reactions are discrete and which are continuous
 DoDisc = [0; 0; 0; 0; 0; 0];
