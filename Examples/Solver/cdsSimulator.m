@@ -68,7 +68,7 @@ for ContT=TimeMesh(2:end)
 
     Xprev = X(:,iters-1);
     % identify which compartment is to be modelled with Discrete and continuous dynamics
-    [DoDisc, DoCont, discCompartment, contCompartment, sumTimes, RandTimes, XIsDiscrete] = IsDiscrete(Xprev,nu,rates,kTime,kConsts,dt,AbsT,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes);
+    [DoDisc, DoCont, discCompartment, contCompartment, sumTimes, RandTimes, XIsDiscrete] = IsDiscrete(Xprev,nu,rates,dt,AbsT,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes);
 
     if( sum(Xprev == XIsDiscrete)<length(Xprev))
         X(:,iters) = XIsDiscrete;
@@ -77,7 +77,7 @@ for ContT=TimeMesh(2:end)
     end
 
     % compute propensities
-    Props = rates(Xprev,kTime(kConsts,AbsT-dt));
+    Props = rates(Xprev,AbsT-dt);
 
     % Perform the Forward Euler Step
     dXdt = sum(Props.*(contCompartment.*nu),1)';
@@ -94,7 +94,7 @@ for ContT=TimeMesh(2:end)
         Xcurr = X(:,iters);
 
         % Integrate the cummulative wait times using trapazoid method
-        TrapStep = Dtau*0.5*(rates(Xprev,kTime(kConsts,AbsT-Dtau)) + rates(Xcurr,kTime(kConsts,AbsT)));
+        TrapStep = Dtau*0.5*(rates(Xprev,AbsT-Dtau) + rates(Xcurr,AbsT));
         sumTimes = sumTimes+TrapStep;
 
         % identify which events have occured
@@ -107,7 +107,7 @@ for ContT=TimeMesh(2:end)
                     % calculate time tau until event using linearisation of integral:
                     % u_k = 1-exp(- integral_{ti}^{t} f_k(s)ds )
                     ExpInt = exp(-(sumTimes(kk)-TrapStep(kk)));
-                    Props = rates(Xprev,kTime(kConsts,AbsT-Dtau));
+                    Props = rates(Xprev,AbsT-Dtau);
                     tauArray(kk) = log((1-RandTimes(kk))/ExpInt)/(1*Props(kk));
                 end
             end
@@ -128,7 +128,7 @@ for ContT=TimeMesh(2:end)
 
                 % Bring compartments up to date
                 sumTimes = sumTimes - TrapStep;
-                TrapStep = Dtau1*0.5*(rates(Xprev,kTime(kConsts,AbsT-Dtau1)) + rates(Xprev + (Dtau1*(~DoDisc)).*dXdt,kTime(kConsts,AbsT)));
+                TrapStep = Dtau1*0.5*(rates(Xprev,AbsT-Dtau1) + rates(Xprev + (Dtau1*(~DoDisc)).*dXdt,AbsT));
                 sumTimes = sumTimes+TrapStep;
 
                 % reset timers and sums
@@ -165,14 +165,14 @@ end
 %%
 
 
-function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp, sumTimes,RandTimes, Xprev] = IsDiscrete(X,nu,rates,kTime,kConsts,dt,AbsT,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes)
+function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp, sumTimes,RandTimes, Xprev] = IsDiscrete(X,nu,rates,dt,AbsT,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes)
 
     Xprev = X;
     OriginalDoDisc = DoDisc;
     OriginalDoCont = DoCont;
     for ii=1:length(X)
         if(~EnforceDo(ii))
-            dX_ii = dt*sum(abs(nu(:,ii)).*rates(X,kTime(kConsts,AbsT)));
+            dX_ii = dt*sum(abs(nu(:,ii)).*rates(X,AbsT));
 
             if(dX_ii >= SwitchingThreshold(1))
                 DoCont(ii) = 1;

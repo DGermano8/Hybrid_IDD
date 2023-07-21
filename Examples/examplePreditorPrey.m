@@ -2,15 +2,15 @@ clear all;
 close all;
 addpath('Solver');
 %   | mBirthA*A
-%   | 
-%   v       mDeathA*A*B  
-%   -----      --->       -----       
-%   | A |                 | B |      
-%   -----      --->       -----      
+%   |
+%   v       mDeathA*A*B
+%   -----      --->       -----
+%   | A |                 | B |
+%   -----      --->       -----
 %           mBirthB*A*B     |
-%                           | mDeathB*B 
-%                           V          
-%   
+%                           | mDeathB*B
+%                           V
+%
 %   A = Prey
 %   B = Preditor
 
@@ -33,9 +33,7 @@ tFinal = 100;
 dt = 10^(-3);
 SwitchingThreshold = [0.2; 20];
 
-% mDeathA rate parameters
-kConsts = [mDeathA; mBirthB;   mBirthA;     mDeathB;];
-kTime = @(p,t) [p(1); p(2); p(3); p(4)];
+% Initial condition
 X0 = [A0;B0];
 
 % stoichiometric matrix
@@ -45,17 +43,19 @@ nu = [-1, 1;
       0, -1];
 
 % propensity function
-rates = @(X) k.*[(X(1)*X(2));
-                 (X(1)*X(2));
-                 X(1);
-                 X(2)];
+k = [mDeathA; mBirthB;   mBirthA; mDeathB;];
+rates = @(X, t) k.*[(X(1)*X(2));
+                    (X(1)*X(2));
+                    X(1);
+                    X(2)];
 
 % identify which reactions are discrete and which are continuous
 DoDisc = [0; 0];
 EnforceDo = [1; 1];
 
 %%
-<<<<<<< HEAD:Examples/examplePreditorPrey.m
+
+% FOOOOOOO
 stoich = struct();
 stoich.nu = nu;
 stoich.DoDisc = DoDisc;
@@ -64,20 +64,7 @@ myOpts = struct();
 myOpts.EnforceDo = EnforceDo;
 myOpts.dt = dt;
 myOpts.SwitchingThreshold = SwitchingThreshold;
-=======
-CompartmentSystem  = struct();
 
-CompartmentSystem.X0 =X0;
-CompartmentSystem.tFinal = tFinal;
-CompartmentSystem.kConsts = kConsts;
-CompartmentSystem.kTime = kTime;
-CompartmentSystem.rates = rates;
-CompartmentSystem.nu = nu;
-CompartmentSystem.DoDisc = DoDisc;
-CompartmentSystem.EnforceDo = EnforceDo;
-CompartmentSystem.dt = dt;
-CompartmentSystem.SwitchingThreshold = SwitchingThreshold;
->>>>>>> main:Examples/PreditorPrey.m
 
 tic;
 % profile on

@@ -37,8 +37,6 @@ dt = 10^(-3);
 SwitchingThreshold = [0.2; 20];
 
 % kinetic rate parameters
-kConsts =      [mBeta; mGamma;   mBirth;     mDeath;      mDeath;      mDeath];
-kTime = @(p,t) [p(1); p(2); p(3); p(4); p(5); p(6)];
 X0 = [S0;I0;R0];
 
 
@@ -61,8 +59,8 @@ nuPlus = [0,2,0;
 nu = nuPlus - nuMinus;
 
 % propensity function
-% Rates :: X -> rates -> propensities
-rates = @(X) k.*[(X(1)*X(2))/(X(1)+X(2)+X(3));
+k = [mBeta; mGamma; mBirth; mDeath; mDeath; mDeath];
+rates = @(X,t) k.*[(X(1)*X(2))/(X(1)+X(2)+X(3));
                  X(2);
                  X(1)+X(2)+X(3);
                  X(1);
