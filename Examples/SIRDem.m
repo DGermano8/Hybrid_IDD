@@ -87,6 +87,11 @@ tic;
 [X,TauArr] = cdsSimulator(X0, rates, stoich, solTimes, myOpts);
 % profile off
 % profile viewer
+% NOTE when I profiled this, it looked like calls to the rate function
+% where the most expensive part of the evaluation so I don't think
+% that the allocation of a dynamic array is going to be a problem.
+% There are stacks and exponentially growing allocations if this ends
+% up changing.
 toc;
 
 %%
