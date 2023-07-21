@@ -1,4 +1,4 @@
-%GENERALISEDSOLVERSWITCHINGREGIMES  Sample from CD-switching process.
+%CDSSIMULATOR  Sample from CD-switching process.
 %   [X,TAUARR] = cdsSimulator(X0, RATES, STOICH, TIMES, OPTIONS)
 %   simulates from the continuous-discrete-switching process with flow
 %   RATES and stoichiometry STOICH, starting from initial condition
@@ -23,7 +23,7 @@
 % respected.
 %
 % Author: Domenic P.J. Germano (2023).
-function [X,TauArr] = GeneralisedSolverSwitchingRegimes(x0, rates, stoich, times, options)
+function [X,TauArr] = cdsSimulator(x0, rates, stoich, times, options)
 
 %%%%%%%%%%%%%%%%% Initilise %%%%%%%%%%%%%%%%%
 X0 = x0;

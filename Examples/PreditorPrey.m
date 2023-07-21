@@ -64,7 +64,10 @@ myOpts.dt = dt;
 myOpts.SwitchingThreshold = SwitchingThreshold;
 
 tic;
-[X,TauArr] = GeneralisedSolverSwitchingRegimes(X0, rates, stoich, solTimes, myOpts);
+% profile on
+[X,TauArr] = cdsSimulator(X0, rates, stoich, solTimes, myOpts);
+% profile off
+% profile viewer
 toc;
 
 %%
