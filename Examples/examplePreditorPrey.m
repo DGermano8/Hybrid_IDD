@@ -31,10 +31,11 @@ tFinal = 100;
 
 % These are solver options
 dt = 10^(-3);
-SwitchingThreshold = 0.2;
+SwitchingThreshold = [0.2; 20];
 
 % mDeathA rate parameters
-k = [mDeathA; mBirthB;   mBirthA;     mDeathB;];
+kConsts = [mDeathA; mBirthB;   mBirthA;     mDeathB;];
+kTime = @(p,t) [p(1); p(2); p(3); p(4)];
 X0 = [A0;B0];
 
 % stoichiometric matrix
@@ -54,6 +55,7 @@ DoDisc = [0; 0];
 EnforceDo = [1; 1];
 
 %%
+<<<<<<< HEAD:Examples/examplePreditorPrey.m
 stoich = struct();
 stoich.nu = nu;
 stoich.DoDisc = DoDisc;
@@ -62,6 +64,20 @@ myOpts = struct();
 myOpts.EnforceDo = EnforceDo;
 myOpts.dt = dt;
 myOpts.SwitchingThreshold = SwitchingThreshold;
+=======
+CompartmentSystem  = struct();
+
+CompartmentSystem.X0 =X0;
+CompartmentSystem.tFinal = tFinal;
+CompartmentSystem.kConsts = kConsts;
+CompartmentSystem.kTime = kTime;
+CompartmentSystem.rates = rates;
+CompartmentSystem.nu = nu;
+CompartmentSystem.DoDisc = DoDisc;
+CompartmentSystem.EnforceDo = EnforceDo;
+CompartmentSystem.dt = dt;
+CompartmentSystem.SwitchingThreshold = SwitchingThreshold;
+>>>>>>> main:Examples/PreditorPrey.m
 
 tic;
 % profile on

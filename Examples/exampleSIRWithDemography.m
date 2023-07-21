@@ -1,15 +1,19 @@
-clear all;
+% clear all;
 close all;
 addpath('Solver');
-% 
+
+% randSeed = randSeed+1;
+rng(26)
+
+%
 %   | mBirth*N
-%   v 
+%   v
 %   -----   mBeta*I*S/N     -----      mGamma*I     -----
-%   | S |       --->        | I |       --->        | R |        
+%   | S |       --->        | I |       --->        | R |
 %   -----                   -----                   -----
 %   | mDeath*S              | mDeath*I              | mDeath*R
 %   V                       V                       V
-%   
+%
 
 % These define the rates of the system
 mBeta = 1.45/7; % Infect "___" people a week
@@ -30,13 +34,14 @@ tFinal = 1000;
 
 % These are solver options
 dt = 10^(-3);
-SwitchingThreshold = 0.2;
+SwitchingThreshold = [0.2; 20];
 
 % kinetic rate parameters
-k = [mBeta; mGamma;   mBirth;     mDeath;      mDeath;      mDeath];
+kConsts =      [mBeta; mGamma;   mBirth;     mDeath;      mDeath;      mDeath];
+kTime = @(p,t) [p(1); p(2); p(3); p(4); p(5); p(6)];
 X0 = [S0;I0;R0];
 
-                     
+
 % reactant stoichiometries
 nuMinus = [1,1,0;
            0,1,0;
@@ -44,7 +49,7 @@ nuMinus = [1,1,0;
            1,0,0;
            0,1,0;
            0,0,1];
-       
+
 % product stoichiometries
 nuPlus = [0,2,0;
           0,0,1;
@@ -111,5 +116,5 @@ subplot(1,2,2)
 plot(X(1,:),X(2,:),'.','linewidth',1.5)
 set(gca, 'YScale', 'log')
 set(gca, 'XScale', 'log')
-ylabel('S')
-xlabel('I')
+ylabel('I')
+xlabel('S')
