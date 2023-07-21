@@ -55,7 +55,6 @@ EnforceDo = [1; 1];
 
 %%
 
-% FOOOOOOO
 stoich = struct();
 stoich.nu = nu;
 stoich.DoDisc = DoDisc;
