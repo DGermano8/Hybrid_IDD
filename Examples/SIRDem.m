@@ -72,20 +72,18 @@ EnforceDo = [0; 0; 1];
 % EnforceDo = [1; 0; 1];
 
 %%
-CompartmentSystem = struct();
-CompartmentSystem.X0 =X0;
-CompartmentSystem.rates = rates;
-CompartmentSystem.nu = nu;
-CompartmentSystem.DoDisc = DoDisc;
-CompartmentSystem.EnforceDo = EnforceDo;
+stoich = struct();
+stoich.nu = nu;
+stoich.DoDisc = DoDisc;
+solTimes = 0:dt:tFinal;
+myOpts = struct();
+myOpts.EnforceDo = EnforceDo;
+myOpts.dt = dt;
+myOpts.SwitchingThreshold = SwitchingThreshold;
 
-solverConfig = struct();
-solverConfig.tFinal = tFinal;
-solverConfig.dt = dt;
-solverConfig.SwitchingThreshold = SwitchingThreshold;
 
 tic;
-[X,TauArr] = GeneralisedSolverSwitchingRegimes(CompartmentSystem, solverConfig);
+[X,TauArr] = GeneralisedSolverSwitchingRegimes(X0, rates, stoich, solTimes, myOpts);
 toc;
 
 %%
