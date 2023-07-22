@@ -16,25 +16,25 @@ rng(26)
 %               ...:        	   :
 %               :                  .....
 %               :                      :
-%            ------   (4)     ------   v (5)   ------   (6)
-%           | I_M |    <---  | E_M |  <-----  | S_M | <-- mBirth*N_M
-%           ------   mG*E_M   ------  mB*I_H   ------
-%                 |              |               |
-%                 v              v               v
-%             mDeath*I_M     mDeath*E_M      mDeath*S_M
-%               (7)              (8)            (9)
+%            ------   (4)     ------   v (5)     ------   (6)
+%           | I_M |    <---  | E_M |  <-----    | S_M | <-- mBirth*N_M
+%           ------   mG*E_M   ------ mB*I_H*S_M  ------
+%                 |              |                |
+%                 v              v                v
+%             mDeath*I_M     mDeath*E_M       mDeath*S_M
+%               (7)              (8)             (9)
 %
 % These define the rates of the system
-mB = 10;          % 10 bites a day
-mBeta = 0.01;      % Successful transfer of parasite
-mGamma = 0.5;     % 1 week to recover
-mOmega = 0.1; % 1 yeah of immunity
-mG = 0.5;
+mB = 0.5;          % 10 bites a day
+mBeta = 0.001;      % Successful transfer of parasite
+mGamma = 1/7;     % 1 week to recover
+mOmega = 1/14; % 1 yeah of immunity
+mG = 1;
 mDeath = 0.25;
 mBirth = mDeath;
 
 % These are the initial conditions
-NH0 = 10^2;
+NH0 = 10^3;
 RH0 = 0;
 IH0 = 20;
 SH0 = NH0-RH0-IH0;
@@ -77,14 +77,14 @@ rates = @(X,t) kTime(kConsts, t).* [(X(1)*X(6));      % 1
                                     X(2);             % 2
                                     X(3);             % 3
                                     X(5);             % 4
-                                    X(2);             % 5
+                                    X(2)*X(4);        % 5
                                     X(4)+X(5)+X(6);   % 6
                                     X(6);             % 7
                                     X(5);             % 8
                                     X(4)];            % 9
 
 % identify which reactions are discrete and which are continuous
-DoDisc = [1; 1; 1; 0; 0; 0];
+DoDisc = [0; 0; 0; 0; 0; 0];
 % allow S and I to switch, but force R to be continuous
 EnforceDo = [1; 1; 1; 1; 1; 1];
 % allow I to switch, but force S and R to be continuous
