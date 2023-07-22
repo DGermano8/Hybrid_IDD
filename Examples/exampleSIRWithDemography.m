@@ -3,7 +3,7 @@ close all;
 addpath('Solver');
 
 % randSeed = randSeed+1;
-
+rng(3)
 %
 %   | mBirth*N
 %   v
@@ -16,8 +16,8 @@ addpath('Solver');
 
 % These define the rates of the system
 mBeta = 1.0/7; % Infect "___" people a week
-mGamma = 0.4/7; % infecion for "___" weeks
-mDeath = 1/(365); %lifespan
+mGamma = 0.6/7; % infecion for "___" weeks
+mDeath = 1/(2*365); %lifespan
 mBirth = mDeath;
 
 R_0 = mBeta/(mGamma+mDeath)
@@ -69,7 +69,7 @@ rates = @(X,t) k.*[(X(1)*X(2))/(X(1)+X(2)+X(3));
 % identify which reactions are discrete and which are continuous
 DoDisc = [0; 1; 0];
 % allow S and I to switch, but force R to be continuous
-EnforceDo = [1; 0; 1];
+EnforceDo = [0; 0; 1];
 % allow I to switch, but force S and R to be continuous
 % EnforceDo = [1; 0; 1];
 
@@ -86,9 +86,8 @@ myOpts.SwitchingThreshold = SwitchingThreshold;
 
 tic;
 % profile on
-% [X,TauArr] = MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts);
-[X,TauArr] = cdsSimulator(X0, rates, stoich, solTimes, myOpts);
-% [X,TauArr] = Copy_of_cdsSimulator(X0, rates, stoich, solTimes, myOpts);
+[X,TauArr] = MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts);
+% [X,TauArr] = cdsSimulator(X0, rates, stoich, solTimes, myOpts);
 % profile off
 % profile viewer
 % NOTE when I profiled this, it looked like calls to the rate function
@@ -112,7 +111,7 @@ hold off;
 
 subplot(1,2,2)
 hold on;
-plot(X(1,:),X(2,:),'.','linewidth',1.5)
+plot(X(1,:),X(2,:),'.-','linewidth',1.0)
 set(gca, 'YScale', 'log')
 set(gca, 'XScale', 'log')
 ylabel('I')

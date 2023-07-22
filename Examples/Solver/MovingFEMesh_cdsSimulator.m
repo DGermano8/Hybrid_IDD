@@ -1,3 +1,4 @@
+
 %CDSSIMULATOR  Sample from CD-switching process.
 %   [X,TAUARR] = cdsSimulator(X0, RATES, STOICH, TIMES, OPTIONS)
 %   simulates from the continuous-discrete-switching process with flow
@@ -10,8 +11,8 @@
 %   OPTIONS is a structure with the following fields:
 %   - dt: the time step used for the Euler-Maruyama discretisation of
 %     the continuous dynamics. Default: 0.01.
-%   - EnforceDo: a boolean indicating whether to enforce the discrete or
-%     cont inuous dynamics to be active at all times. Default: false.
+%   - EnforceDo: a boolean indicating whether to enforce the discrete
+%     dynamics to be active at all times. Default: false.
 %   - SwitchingThreshold: a threshold for switching between discrete
 %     and continuous dynamics. Default: 0.1.
 %
@@ -61,21 +62,36 @@ iters = 1;
 % Track Absolute time
 AbsT = dt;
 ContT = 0;
+
 Xprev = X0;
 Xcurr = zeros(nCompartments,1);
 while ContT < tFinal
-    ContT = ContT + dt;
+    ContT = ContT + dt;    
     iters = iters + 1;
-
-    Xprev = X(:,iters-1);
+    
     Dtau = dt;
-
+    Xprev = X(:,iters-1);
+    
+    
+%     if((sum(EnforceDo) ~= length(EnforceDo)))
+%         % identify which compartment is to be modelled with Discrete and continuous dynamics
+%         [DoDisc, DoCont, discCompartment, contCompartment, sumTimes, RandTimes, XIsDiscrete] = IsDiscrete(Xprev,nu,rates,dt,AbsT,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes);
+% 
+%         if( sum(Xprev == XIsDiscrete)<length(Xprev))
+%             X(:,iters) = XIsDiscrete;
+%             TauArr(iters) = ContT;
+%             iters = iters + 1;
+%         end
+%     end
+    
     % identify which compartment is to be modelled with Discrete and continuous dynamics
     if((sum(EnforceDo) ~= length(EnforceDo)))
 
-        [NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment] = IsDiscrete(Xprev,nu,rates,dt,AbsT,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes);
+        [NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment, ~, ~, ~] = IsDiscrete(Xprev,nu,rates,dt,AbsT,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes);
+%         [NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment] = IsDiscrete(Xprev,nu,rates,dt,AbsT,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes);
 
         % move Euler mesh to ensure the new distcrete compartment is integer
+        correctInteger = 0;
         if(nnz(NewDoDisc) > nnz(DoDisc))
             % this ^ identifies a state has switched to discrete
             % identify which compartment is the switch
@@ -90,29 +106,12 @@ while ContT < tFinal
 
             if(dt < Dtau)
                 % your threshold is off, stay continuous
-                Dtau = dt;
+                % slow down the FE solver so dont overstep the change
+                Dtau = 0.75*dt;
             else
+                correctInteger = 1;
                 ContT = ContT - dt + Dtau;
                 AbsT = AbsT  - dt + Dtau;
-
-                contCompartment = NewcontCompartment;
-                discCompartment = NewdiscCompartment;
-                DoCont = NewDoCont;
-
-                for ii=1:length(Xprev)
-                    if(~EnforceDo(ii))
-                        for jj = 1:size(compartInNu,1)
-                            if(NewDoDisc(ii) && compartInNu(jj,ii))
-                                discCompartment(jj) = 1;
-                                if(~DoDisc(ii))
-                                    sumTimes(jj) = 0.0;
-                                    RandTimes(jj) = rand;
-                                end
-                            end
-                        end
-                    end
-                end
-                DoDisc = NewDoDisc;
 
             end
 
@@ -123,6 +122,7 @@ while ContT < tFinal
             DoDisc = NewDoDisc;
         end    
     end
+    
 
     % compute propensities
     Props = rates(Xprev,AbsT-Dtau);
@@ -130,11 +130,34 @@ while ContT < tFinal
     % Perform the Forward Euler Step
     dXdt = sum(Props.*(contCompartment.*nu),1)';
     X(:,iters) = X(:,iters-1) + Dtau*dXdt.*DoCont;
-    
     TauArr(iters) = ContT;
+    
+    if(correctInteger)
+        contCompartment = NewcontCompartment;
+        discCompartment = NewdiscCompartment;
+        DoCont = NewDoCont;
 
+        for ii=1:length(Xprev)
+            if(~EnforceDo(ii))
+                X(ii,iters) = round(X(ii,iters));
+                for jj = 1:size(compartInNu,1)
+                    if(NewDoDisc(ii) && compartInNu(jj,ii))
+                        discCompartment(jj) = 1;
+                        if(~DoDisc(ii))
+                            sumTimes(jj) = 0.0;
+                            RandTimes(jj) = rand;
+                        end
+                    end
+                end
+            end
+        end
+        DoDisc = NewDoDisc;
+    end
+
+    
     % Dont bother doing anything discrete if its all continuous
     stayWhile = (true)*(sum(DoCont)~=length(DoCont));
+    
     TimePassed = 0;
     % Perform the Stochastic Loop
     while stayWhile
@@ -142,11 +165,8 @@ while ContT < tFinal
         Xprev = X(:,iters-1);
         Xcurr = X(:,iters);
 
-        % compute propensities
-        Props = rates(Xprev,AbsT-dt);
-
         % Integrate the cummulative wait times using trapazoid method
-        TrapStep = Dtau*0.5*(Props + rates(Xcurr,AbsT));
+        TrapStep = Dtau*0.5*(rates(Xprev,AbsT-Dtau) + rates(Xcurr,AbsT));
         sumTimes = sumTimes+TrapStep;
 
         % identify which events have occured
@@ -159,7 +179,7 @@ while ContT < tFinal
                     % calculate time tau until event using linearisation of integral:
                     % u_k = 1-exp(- integral_{ti}^{t} f_k(s)ds )
                     ExpInt = exp(-(sumTimes(kk)-TrapStep(kk)));
-%                     Props = rates(Xprev,AbsT-Dtau);
+                    Props = rates(Xprev,AbsT-Dtau);
                     tauArray(kk) = log((1-RandTimes(kk))/ExpInt)/(1*Props(kk));
                 end
             end
@@ -217,12 +237,11 @@ end
 %%
 
 
-function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp] = IsDiscrete(X,nu,rates,dt,AbsT,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes)
+function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp, sumTimes,RandTimes, Xprev] = IsDiscrete(X,nu,rates,dt,AbsT,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes)
 
     Xprev = X;
     OriginalDoDisc = DoDisc;
     OriginalDoCont = DoCont;
-    trigger = 0;
     for ii=1:length(X)
         if(~EnforceDo(ii))
             dX_ii = dt*sum(abs(nu(:,ii)).*rates(X,AbsT));
@@ -233,22 +252,18 @@ function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp] = IsDiscrete(X
             elseif(Xprev(ii) < SwitchingThreshold(2))
                 DoCont(ii) = 0;
                 DoDisc(ii) = 1;
-                Xprev(ii) = round(X(ii));
-                trigger = 1;
             else
                 DoCont(ii) = 0;
                 DoDisc(ii) = 1;
             end
 
 %             if(OriginalDoCont(ii) && DoDisc(ii))
+% 
 %                 % This needs a better solution \TODO
 %                 if(Xprev(ii) < SwitchingThreshold(2))
 %                 	Xprev(ii) = round(X(ii));
 %                 end
-%             elseif(DoDisc(ii) && OriginalDoDisc(ii) && ~isinteger(Xprev(ii)))
-%                 Xprev(ii) = round(X(ii));
 %             end
-            
         end
 
     end
@@ -259,10 +274,10 @@ function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp] = IsDiscrete(X
             for jj = 1:size(compartInNu,1)
                 if(DoDisc(ii) && compartInNu(jj,ii))
                     discCompartmentTmp(jj) = 1;
-                    if(trigger)
-                        sumTimes(jj) = 0.0;
-                        RandTimes(jj) = rand;
-                    end
+%                     if(~OriginalDoDisc(ii))
+%                         sumTimes(jj) = 0.0;
+%                         RandTimes(jj) = rand;
+%                     end
                 end
             end
         end
