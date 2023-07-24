@@ -24,7 +24,7 @@
 % respected.
 %
 % Author: Domenic P.J. Germano (2023).
-function [X,TauArr] = MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options)
+function [X,TauArr,DiscTimes] = MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options)
 
 %%%%%%%%%%%%%%%%% Initilise %%%%%%%%%%%%%%%%%
 X0 = x0;
@@ -58,6 +58,9 @@ X = zeros(nCompartments,overFlowAllocation);
 X(:,1) = X0;
 TauArr = zeros(1,overFlowAllocation);
 iters = 1;
+
+DiscTimes = zeros(1,overFlowAllocation);
+DiscIter = ones(nRates,1);
 
 % Track Absolute time
 AbsT = dt;
@@ -116,9 +119,9 @@ while ContT < tFinal
 
     % compute propensities
     Props = rates(Xprev,AbsT-Dtau);
+
     % Perform the Forward Euler Step
     dXdt = sum(Props.*(contCompartment.*nu),1)';
-    
     X(:,iters) = X(:,iters-1) + Dtau*dXdt.*DoCont;
     TauArr(iters) = ContT;
     
@@ -129,11 +132,12 @@ while ContT < tFinal
 
         for ii=1:length(Xprev)
             if(~EnforceDo(ii))
-                % shouldnt need to do this, but just to be safe
-                X(ii,iters) = round(X(ii,iters));
+                
                 for jj = 1:size(compartInNu,1)
                     if(NewDoDisc(ii) && compartInNu(jj,ii))
                         discCompartment(jj) = 1;
+                        % shouldnt need to do this, but just to be safe
+                        X(ii,iters) = round(X(ii,iters));
                         if(~DoDisc(ii))
                             sumTimes(jj) = 0.0;
                             RandTimes(jj) = rand;
@@ -182,6 +186,9 @@ while ContT < tFinal
 
                 TimePassed = TimePassed + Dtau1;
                 AbsT = AbsT + Dtau1;
+                
+                DiscTimes(pos,DiscIter(pos)) = AbsT;
+                DiscIter(pos) = DiscIter(pos) + 1;
 
                 % implement first reaction
                 iters = iters + 1;

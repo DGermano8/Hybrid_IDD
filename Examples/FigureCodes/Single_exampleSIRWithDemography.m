@@ -15,25 +15,25 @@ addpath('Solver');
 %
 
 % These define the rates of the system
-mBeta = 2/7; % Infect "___" people a week
-mGamma = 1/7; % infecion for "___" weeks
+mBeta = 1.0/7; % Infect "___" people a week
+mGamma = 0.6/7; % infecion for "___" weeks
 mDeath = 1/(2*365); %lifespan
 mBirth = mDeath;
 
 R_0 = mBeta/(mGamma+mDeath)
 
 % These are the initial conditions
-N0 = 10^5;
+N0 = 10^7;
 I0 = 2;
 R0 = 0;
 S0 = N0-I0-R0;
 
 % How long to simulate for
-tFinal = 150;
+tFinal = 1500;
 
 % These are solver options
-dt = 10^(-1);
-SwitchingThreshold = [0.2; 20];
+dt = 10^(-2);
+SwitchingThreshold = [0.3; 20];
 
 % kinetic rate parameters
 X0 = [S0;I0;R0];
@@ -69,7 +69,7 @@ rates = @(X,t) k.*[(X(1)*X(2))/(X(1)+X(2)+X(3));
 % identify which reactions are discrete and which are continuous
 DoDisc = [0; 0; 0];
 % allow S and I to switch, but force R to be continuous
-EnforceDo = [1; 1; 1];
+EnforceDo = [0; 0; 1];
 % allow I to switch, but force S and R to be continuous
 % EnforceDo = [1; 0; 1];
 
@@ -83,28 +83,17 @@ myOpts.EnforceDo = EnforceDo;
 myOpts.dt = dt;
 myOpts.SwitchingThreshold = SwitchingThreshold;
 
+f=figure;
 
 tic;
-% profile on
 [X,TauArr] = MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts);
-% [X,TauArr] = cdsSimulator(X0, rates, stoich, solTimes, myOpts);
-% profile off
-% profile viewer
-% NOTE when I profiled this, it looked like calls to the rate function
-% where the most expensive part of the evaluation so I don't think
-% that the allocation of a dynamic array is going to be a problem.
-% There are stacks and exponentially growing allocations if this ends
-% up changing.
 toc;
 
-%%
-
-% figure;
 subplot(1,2,1)
 hold on;
-plot(TauArr,X(1,:),'.','linewidth',1.5)
-plot(TauArr,X(2,:),'.','linewidth',1.5)
-plot(TauArr,X(3,:),'.','linewidth',1.5)
+plot(TauArr,X(1,:),'.','linewidth',1.5,'color',[0.1 0.1 0.75])
+plot(TauArr,X(2,:),'.','linewidth',1.5,'color',[0.75 0.1 0.1])
+plot(TauArr,X(3,:),'.','linewidth',1.5,'color',[0.1 0.725 0.1])
 legend('S','I','R')
 axis([0 tFinal 0 1.1*N0])
 hold off;
@@ -116,3 +105,6 @@ set(gca, 'YScale', 'log')
 set(gca, 'XScale', 'log')
 ylabel('I')
 xlabel('S')
+
+
+
