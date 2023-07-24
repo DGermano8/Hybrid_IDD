@@ -1,9 +1,9 @@
 % clear all;
-% close all;
+close all;
 addpath('Solver');
-
+clc
 % randSeed = randSeed+1;
-% rng(3)
+% rng(9)
 %
 %   | mBirth*N
 %   v
@@ -15,8 +15,8 @@ addpath('Solver');
 %
 
 % These define the rates of the system
-mBeta = 2/7; % Infect "___" people a week
-mGamma = 1/7; % infecion for "___" weeks
+mBeta = 1/7; % Infect "___" people a week
+mGamma = 0.61/7; % infecion for "___" weeks
 mDeath = 1/(2*365); %lifespan
 mBirth = mDeath;
 
@@ -24,15 +24,15 @@ R_0 = mBeta/(mGamma+mDeath)
 
 % These are the initial conditions
 N0 = 10^5;
-I0 = 2;
+I0 = 20;
 R0 = 0;
 S0 = N0-I0-R0;
 
 % How long to simulate for
-tFinal = 150;
+tFinal = 1000;
 
 % These are solver options
-dt = 10^(-1);
+dt = 10^(-3);
 SwitchingThreshold = [0.2; 20];
 
 % kinetic rate parameters
@@ -69,7 +69,7 @@ rates = @(X,t) k.*[(X(1)*X(2))/(X(1)+X(2)+X(3));
 % identify which reactions are discrete and which are continuous
 DoDisc = [0; 0; 0];
 % allow S and I to switch, but force R to be continuous
-EnforceDo = [1; 1; 1];
+EnforceDo = [0; 0; 1];
 % allow I to switch, but force S and R to be continuous
 % EnforceDo = [1; 0; 1];
 

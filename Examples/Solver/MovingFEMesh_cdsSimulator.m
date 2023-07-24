@@ -113,7 +113,6 @@ while ContT < tFinal
         end    
     end
     
-
     % compute propensities
     Props = rates(Xprev,AbsT-Dtau);
     % Perform the Forward Euler Step
@@ -155,13 +154,14 @@ while ContT < tFinal
 
         Xprev = X(:,iters-1);
         Xcurr = X(:,iters);
-
+        
         % Integrate the cummulative wait times using trapazoid method
         TrapStep = Dtau*0.5*(rates(Xprev,AbsT-Dtau) + rates(Xcurr,AbsT));
         sumTimes = sumTimes+TrapStep;
 
         % identify which events have occured
         IdEventsOccued = (RandTimes < (1 - exp(-sumTimes))).*discCompartment;
+        
         if( sum(IdEventsOccued) > 0)
             tauArray = zeros(nRates,1);
             for kk=1:length(IdEventsOccued)
@@ -236,7 +236,7 @@ function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp, sumTimes,RandT
     for ii=1:length(X)
         if(~EnforceDo(ii))
             dX_ii = dt*sum(abs(nu(:,ii)).*rates(X,AbsT));
-
+            
             if(dX_ii >= SwitchingThreshold(1))
                 DoCont(ii) = 1;
                 DoDisc(ii) = 0;
