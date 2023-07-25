@@ -1,62 +1,61 @@
+---
+title: "testing SIR Code"
+format:
+  html:
+    code-fold: true
+jupyter: python3
+---
+
+This code should execure the SIR example bellow:
+
+   | mBirth*N
+   v
+   -----   mBeta*I*S/N     -----      mGamma*I     -----
+   | S |       --->        | I |       --->        | R |
+   -----                   -----                   -----
+   | mDeath*S              | mDeath*I              | mDeath*R
+   V                       V                       V
+
+
+```{python}
 import numpy as np
 import matplotlib.pyplot as plt
 from Solver import MovingFEMesh_cdsSimulator
-
-#   | mBirth*N
-#   v
-#   -----   mBeta*I*S/N     -----      mGamma*I     -----
-#   | S |       --->        | I |       --->        | R |
-#   -----                   -----                   -----
-#   | mDeath*S              | mDeath*I              | mDeath*R
-#   V                       V                       V
-#
 
 # np.random.seed(3)
 
 # These define the rates of the system
 mBeta = 2/7  # Infect "___" people a week
-mGamma = 1/7  # infecion for "___" weeks
+mGamma = 0.61/7  # infecion for "___" weeks
 mDeath = 1/(1*365)  # lifespan
 mBirth = mDeath
 
 R_0 = mBeta/(mGamma+mDeath)
 
 # These are the initial conditions
-N0 = 10**4
+N0 = 10**5
 I0 = 2
 R0 = 0
 S0 = N0-I0-R0
 
 # How long to simulate for
-tFinal = 500
+tFinal = 100
 
 # These are solver options
-dt = 10**-2
+dt = 10**-3
 SwitchingThreshold = np.array([0.2, 20])
 
 # kinetic rate parameters
 X0 = np.array([S0, I0, R0])
 
-# reactant stoichiometries
-nuMinus = np.array([[1, 1, 0],
-                    [0, 1, 0],
-                    [0, 0, 0],
-                    [1, 0, 0],
-                    [0, 1, 0],
-                    [0, 0, 1]])
+nu = np.array([[-1, 1, 0],
+               [0, -1, 1],
+               [1, 0, 0],
+               [-1, 0, 0],
+               [0, -1, 0],
+               [0, 0, -1]])
 
-# product stoichiometries
-nuPlus = np.array([[0, 2, 0],
-                   [0, 0, 1],
-                   [1, 0, 0],
-                   [0, 0, 0],
-                   [0, 0, 0],
-                   [0, 0, 0]])
-
-# stoichiometric matrix
-nu = nuPlus - nuMinus
-
-# propensity function
+               # propensity function
 k = np.array([[mBeta, mGamma, mBirth, mDeath, mDeath, mDeath]]).T
 
 def rates(X, t):
@@ -69,10 +68,10 @@ def rates(X, t):
 
 # identify which reactions are discrete and which are continuous
 # make sure that the shape of DoDisc is (3,1)
-DoDisc = np.array([[0, 1, 0]]).T
+DoDisc = np.array([[0, 0, 0]]).T
 
 # allow S and I to switch, but force R to be continuous
-EnforceDo = np.array([[1, 0, 1]]).T
+EnforceDo = np.array([[0, 0, 1]]).T
 
 stoich = {'nu': nu, 'DoDisc': DoDisc}
 solTimes = np.arange(0, tFinal+dt, dt)
@@ -92,7 +91,6 @@ plt.grid(True)
 plt.legend()  # Display legend
 plt.show()
 
-plt.yscale("log")
-plt.xscale("log")
 plt.plot(X[0],X[1], label='S', marker='.', linestyle='', color='blue')
 plt.show()
+```

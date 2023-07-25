@@ -1,9 +1,9 @@
 % clear all;
 % close all;
-% addpath('Solver');
-
+addpath('Solver');
+clc
 % randSeed = randSeed+1;
-rng(2)
+% rng(2)
 %
 %   | mBirth*N
 %   v
@@ -15,25 +15,25 @@ rng(2)
 %
 
 % These define the rates of the system
-mBeta = 1.0/7; % Infect "___" people a week
-mGamma = 0.6/7; % infecion for "___" weeks
-mDeath = 1/(1*365); %lifespan
+mBeta = 1/7; % Infect "___" people a week
+mGamma = 0.61/7; % infecion for "___" weeks
+mDeath = 1/(2*365); %lifespan
 mBirth = mDeath;
 
 R_0 = mBeta/(mGamma+mDeath)
 
 % These are the initial conditions
 N0 = 10^5;
-I0 = 2;
+I0 = 20;
 R0 = 0;
 S0 = N0-I0-R0;
 
 % How long to simulate for
-tFinal = 1500;
+tFinal = 2000;
 
 % These are solver options
-dt = 10^(-3);
-SwitchingThreshold = [0.2; 20];
+dt = 10^(-1);
+SwitchingThreshold = [0.2; 2];
 
 % kinetic rate parameters
 X0 = [S0;I0;R0];
@@ -83,52 +83,39 @@ myOpts.EnforceDo = EnforceDo;
 myOpts.dt = dt;
 myOpts.SwitchingThreshold = SwitchingThreshold;
 
-f=figure;
-
-% tic;
-[X,TauArr,DiscTimes] = MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts);
-% toc;
-%%
-subplot(2,3,1)
-title(['S'])
-plot(TauArr,X(1,:),'.','linewidth',1.5,'color',[0.1 0.1 0.75])
-axis([254.5 255 44040 44070])
-
-subplot(2,3,2)
-title(['I'])
-plot(TauArr,X(2,:),'.','linewidth',1.5,'color',[0.75 0.1 0.1])
-axis([254.5 255 0 1.1*N0])
-
-subplot(2,3,3)
-title(['R'])
-plot(TauArr,X(3,:),'.','linewidth',1.5,'color',[0.1 0.725 0.1])
-axis([254.5 255 0 1.1*N0])
+for ii=1:50
+tic;
+% profile on
+[X,TauArr] = MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts);
+% [X,TauArr] = cdsSimulator(X0, rates, stoich, solTimes, myOpts);
+% profile off
+% profile viewer
+% NOTE when I profiled this, it looked like calls to the rate function
+% where the most expensive part of the evaluation so I don't think
+% that the allocation of a dynamic array is going to be a problem.
+% There are stacks and exponentially growing allocations if this ends
+% up changing.
+toc;
 
 
-subplot(2,3,4)
-title(['No. Discrete Events per 100 Continous'])
-tau = DiscTimes(1,:);
-[val,pos] = max(tau);
-tau(pos+1:end) = [];
-histogram(tau, 0:100*dt:tFinal)
-axis([254.5 255 0 10])
 
-subplot(2,3,5)
-title(['No. Discrete Events per 100 Continous'])
-tau = DiscTimes(2,:);
-[val,pos] = max(tau);
-tau(pos+1:end) = [];
-histogram(tau, 0:100*dt:tFinal)
-axis([254.5 255 0 10])
+% figure;
+subplot(1,2,1)
+hold on;
+plot(TauArr(1:500:end),X(1,(1:500:end)),'.','linewidth',1.5)
+plot(TauArr(1:500:end),X(2,(1:500:end)),'.','linewidth',1.5)
+plot(TauArr(1:500:end),X(3,(1:500:end)),'.','linewidth',1.5)
+legend('S','I','R')
+axis([0 tFinal 0 1.1*N0])
+hold off;
 
-subplot(2,3,6)
-title(['No. Discrete Events per 100 Continous'])
-tau = DiscTimes(3,:);
-[val,pos] = max(tau);
-tau(pos+1:end) = [];
-histogram(tau, 0:100*dt:tFinal)
-axis([254.5 255 0 20])
+subplot(1,2,2)
+hold on;
+plot(X(1,(1:500:end)),X(2,(1:500:end)),'.-','linewidth',1.0)
+set(gca, 'YScale', 'log')
+set(gca, 'XScale', 'log')
+ylabel('I')
+xlabel('S')
+drawnow
 
-% sgtitle('No. Discrete Events per 100 Continous')
-% exportgraphics(f,'SIR_Dem_DiscTimes.png')%,'Resolution',500)
-
+end

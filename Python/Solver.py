@@ -27,7 +27,7 @@ def MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options):
     tauArray = np.zeros(nRates).reshape(nRates, 1)
 
     TimeMesh = np.arange(0, tFinal+dt, dt)
-    overFlowAllocation = round(2.5 * len(TimeMesh))
+    overFlowAllocation = round(4 * len(TimeMesh))
 
     # initialise solution arrays
     X = np.zeros((nCompartments, overFlowAllocation))
@@ -141,14 +141,23 @@ def MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options):
                         # calculate time tau until event using linearisation of integral:
                         # u_k = 1-exp(- integral_{ti}^{t} f_k(s)ds )
                         ExpInt = np.exp(-(sumTimes[kk] - TrapStep[kk]))
-                        # print("ExpInt")
-                        # print(ExpInt)
-                        Props = rates(Xprev, AbsT-Dtau)
-                        tauArray[kk] = np.log((1 - RandTimes[kk]) / ExpInt) / (1 * Props[kk])
-                        # print("absT = ")
-                        # print(AbsT)
-                        # print(tauArray)
 
+                        Props = rates(Xprev, AbsT-Dtau)
+                        # were doing a linear approximation to solve this, so
+                        # it may be off, in which case we just fix it to a
+                        # small order here
+                        tau_val_1 = np.log((1 - RandTimes[kk]) / ExpInt) / (-1 * Props[kk])
+                        tau_val_2 = -1
+                        tau_val = tau_val_1
+                        if tau_val_1 < 0:
+                            if abs(tau_val_1) < dt**(2):
+                                tau_val_2 = abs(tau_val_1)
+                            tau_val_1 = 0
+                            tau_val = max(tau_val_1,tau_val_2)
+                            Dtau = 0.5*Dtau
+                            sumTimes = sumTimes - TrapStep
+
+                        tauArray[kk] = tau_val
                 # identify which reaction occurs first
                 if np.sum(tauArray) > 0:
                     tauArray[tauArray==0.0] = np.inf

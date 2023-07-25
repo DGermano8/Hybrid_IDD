@@ -1,9 +1,9 @@
 % clear all;
-close all;
+% close all;
 addpath('Solver');
 clc
 % randSeed = randSeed+1;
-% rng(9)
+% rng(2)
 %
 %   | mBirth*N
 %   v
@@ -29,11 +29,11 @@ R0 = 0;
 S0 = N0-I0-R0;
 
 % How long to simulate for
-tFinal = 1000;
+tFinal = 1500;
 
 % These are solver options
-dt = 10^(-3);
-SwitchingThreshold = [0.2; 20];
+dt = 10^(-2);
+SwitchingThreshold = [0.2; 2];
 
 % kinetic rate parameters
 X0 = [S0;I0;R0];
@@ -83,7 +83,7 @@ myOpts.EnforceDo = EnforceDo;
 myOpts.dt = dt;
 myOpts.SwitchingThreshold = SwitchingThreshold;
 
-
+for ii=1:50
 tic;
 % profile on
 [X,TauArr] = MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts);
@@ -97,22 +97,25 @@ tic;
 % up changing.
 toc;
 
-%%
+
 
 % figure;
 subplot(1,2,1)
 hold on;
-plot(TauArr,X(1,:),'.','linewidth',1.5)
-plot(TauArr,X(2,:),'.','linewidth',1.5)
-plot(TauArr,X(3,:),'.','linewidth',1.5)
+plot(TauArr(1:500:end),X(1,(1:500:end)),'.','linewidth',1.5)
+plot(TauArr(1:500:end),X(2,(1:500:end)),'.','linewidth',1.5)
+plot(TauArr(1:500:end),X(3,(1:500:end)),'.','linewidth',1.5)
 legend('S','I','R')
 axis([0 tFinal 0 1.1*N0])
 hold off;
 
 subplot(1,2,2)
 hold on;
-plot(X(1,:),X(2,:),'.-','linewidth',1.0)
+plot(X(1,(1:500:end)),X(2,(1:500:end)),'.-','linewidth',1.0)
 set(gca, 'YScale', 'log')
 set(gca, 'XScale', 'log')
 ylabel('I')
 xlabel('S')
+drawnow
+
+end

@@ -169,9 +169,28 @@ while ContT < tFinal
                 if(IdEventsOccued(kk))
                     % calculate time tau until event using linearisation of integral:
                     % u_k = 1-exp(- integral_{ti}^{t} f_k(s)ds )
+%                     ExpInt = exp(-(sumTimes(kk)-TrapStep(kk)));
                     ExpInt = exp(-(sumTimes(kk)-TrapStep(kk)));
                     Props = rates(Xprev,AbsT-Dtau);
-                    tauArray(kk) = log((1-RandTimes(kk))/ExpInt)/(1*Props(kk));
+                    
+                    tau_val_1 = log((1-RandTimes(kk))/ExpInt)/(-1*Props(kk));
+                    tau_val_2 = -1;
+                    tau_val =  tau_val_1;
+                    % were doing a linear approximation to solve this, so
+                    % it may be off, in which case we just fix it to a
+                    % small order here
+                    if(tau_val < 0)
+
+                        if(abs(tau_val_1) < dt^(2))
+                            tau_val_2 = abs(tau_val_1);
+                        end
+                        tau_val_1 = 0;
+                        tau_val = max(tau_val_1,tau_val_2);
+
+                        Dtau = 0.5*Dtau;
+                        sumTimes = sumTimes - TrapStep;
+                    end
+                    tauArray(kk) = tau_val;
                 end
             end
             % identify which reaction occurs first
@@ -202,7 +221,7 @@ while ContT < tFinal
                 Dtau = Dtau-Dtau1;
 
             else
-                stayWhile = false;
+%                 stayWhile = false;
             end
         else
             stayWhile = false;
@@ -236,8 +255,10 @@ function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp, sumTimes,RandT
     for ii=1:length(X)
         if(~EnforceDo(ii))
             dX_ii = dt*sum(abs(nu(:,ii)).*rates(X,AbsT));
+%             dX_ii = (abs(nu(:,ii)).*rates(X,AbsT));
             
             if(dX_ii >= SwitchingThreshold(1))
+%             if(sum(1./dX_ii(dX_ii>0) < dt)>0)
                 DoCont(ii) = 1;
                 DoDisc(ii) = 0;
             elseif(Xprev(ii) < SwitchingThreshold(2))
