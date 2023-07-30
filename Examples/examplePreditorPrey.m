@@ -15,19 +15,19 @@ addpath('Solver');
 %   B = Preditor
 
 % These define the rates of the system
-mDeathA = 0.01;
-mBirthA = 1.1;
+mDeathA = 0.001;
+mBirthA = 1.5;
 
 mDeathB = 0.8;
 mBirthB = 0.01;
 
 
 % These are the initial conditions
-A0 = 10^2;
+A0 = 10^3;
 B0 = 5;
 
 % How long to simulate for
-tFinal = 100;
+tFinal = 200;
 
 % These are solver options
 dt = 10^(-3);
@@ -51,7 +51,7 @@ rates = @(X, t) k.*[(X(1)*X(2));
 
 % identify which reactions are discrete and which are continuous
 DoDisc = [0; 0];
-EnforceDo = [1; 1];
+EnforceDo = [0; 0];
 
 %%
 
@@ -67,7 +67,7 @@ myOpts.SwitchingThreshold = SwitchingThreshold;
 
 tic;
 % profile on
-[X,TauArr] = cdsSimulator(X0, rates, stoich, solTimes, myOpts);
+[X,TauArr] = JumpSwitchFlowSimulator_RK4_Simps(X0, rates, stoich, solTimes, myOpts);
 % profile off
 % profile viewer
 toc;

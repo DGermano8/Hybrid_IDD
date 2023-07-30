@@ -1,6 +1,6 @@
 
-%CDSSIMULATOR  Sample from CD-switching process.
-%   [X,TAUARR] = cdsSimulator(X0, RATES, STOICH, TIMES, OPTIONS)
+%JUMPSWITCHFLOWSIMULATOR  Sample from CD-switching process.
+%   [X,TAUARR] = JumpSwitchFlowSimulator(X0, RATES, STOICH, TIMES, OPTIONS)
 %   simulates from the continuous-discrete-switching process with flow
 %   RATES and stoichiometry STOICH, starting from initial condition
 %   X0, returning the process states at the times in TIMES. The output
@@ -24,7 +24,7 @@
 % respected.
 %
 % Author: Domenic P.J. Germano (2023).
-function [X,TauArr] = MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options)
+function [X,TauArr] = JumpSwitchFlowSimulator(x0, rates, stoich, times, options)
 
 %%%%%%%%%%%%%%%%% Initilise %%%%%%%%%%%%%%%%%
 X0 = x0;
@@ -73,20 +73,23 @@ while ContT < tFinal
     Xprev = X(:,iters-1);
     
     correctInteger = 0;
+    NewDiscCompartmemt = zeros(nCompartments,1);
+    
     % identify which compartment is to be modelled with Discrete and continuous dynamics
     if((sum(EnforceDo) ~= length(EnforceDo)))
+         Props = rates(Xprev,AbsT-Dtau);
 
-        [NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment, ~, ~, ~] = IsDiscrete(Xprev,nu,rates,dt,AbsT,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes);
-%         [NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment] = IsDiscrete(Xprev,nu,rates,dt,AbsT,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes);
+        [NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment, ~, ~, ~] = IsDiscrete(Xprev,nu,Props,rates,Dtau,AbsT-Dtau,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes);
 
         % move Euler mesh to ensure the new distcrete compartment is integer
         if(nnz(NewDoDisc) > nnz(DoDisc))
+            
             % this ^ identifies a state has switched to discrete
             % identify which compartment is the switch
             [~,pos] = max(NewDoDisc-DoDisc);
 
             % compute propensities
-            Props = rates(Xprev,AbsT-Dtau);
+%             Props = rates(Xprev,AbsT-Dtau); %^computed above, reuse for speed
             % Perform the Forward Euler Step
             dXdt = sum(Props.*(contCompartment.*nu),1)';
 
@@ -98,10 +101,13 @@ while ContT < tFinal
                 Dtau = 0.75*dt;
                 ContT = ContT - dt + Dtau;
                 AbsT = AbsT  - dt + Dtau;
+                Props = rates(Xprev,AbsT-Dtau);
             else
+                NewDiscCompartmemt = ((NewDoDisc - DoDisc) ==1);
                 correctInteger = 1;
                 ContT = ContT - dt + Dtau;
                 AbsT = AbsT  - dt + Dtau;
+                Props = rates(Xprev,AbsT-Dtau);
 
             end
 
@@ -110,37 +116,24 @@ while ContT < tFinal
             discCompartment = NewdiscCompartment;
             DoCont = NewDoCont;
             DoDisc = NewDoDisc;
-        end    
+        end  
+    else
+        Props = rates(Xprev,AbsT-Dtau);
     end
+
     
     % compute propensities
-    Props = rates(Xprev,AbsT-Dtau);
+%     Props = rates(Xprev,AbsT-Dtau);  %^computed above, reuse for speed
     % Perform the Forward Euler Step
     dXdt = sum(Props.*(contCompartment.*nu),1)';
     
-    X(:,iters) = X(:,iters-1) + Dtau*dXdt.*DoCont;
-    TauArr(iters) = ContT;
-    
+    XTmp = X(:,iters-1) + Dtau*(dXdt.*DoCont);
+%     TauArr(iters) = ContT;
+        
     if(correctInteger)
         contCompartment = NewcontCompartment;
         discCompartment = NewdiscCompartment;
         DoCont = NewDoCont;
-
-        for ii=1:length(Xprev)
-            if(~EnforceDo(ii))
-                % shouldnt need to do this, but just to be safe
-                X(ii,iters) = round(X(ii,iters));
-                for jj = 1:size(compartInNu,1)
-                    if(NewDoDisc(ii) && compartInNu(jj,ii))
-                        discCompartment(jj) = 1;
-                        if(~DoDisc(ii))
-                            sumTimes(jj) = 0.0;
-                            RandTimes(jj) = rand;
-                        end
-                    end
-                end
-            end
-        end
         DoDisc = NewDoDisc;
     end
 
@@ -150,14 +143,28 @@ while ContT < tFinal
     
     TimePassed = 0;
     % Perform the Stochastic Loop
+    Xcurr = XTmp;
     while stayWhile
 
-        Xprev = X(:,iters-1);
-        Xcurr = X(:,iters);
+%         Xprev = X(:,iters-1);
+%         Xcurr = X(:,iters);
         
         % Integrate the cummulative wait times using trapazoid method
-        TrapStep = Dtau*0.5*(rates(Xprev,AbsT-Dtau) + rates(Xcurr,AbsT));
+        Props = rates(Xprev,AbsT-Dtau); 
+        TrapStep = Dtau*0.5*(Props + rates(Xcurr,AbsT));
         sumTimes = sumTimes+TrapStep;
+        
+        for ii=1:length(Xprev)
+            if(~EnforceDo(ii))
+                for jj = 1:size(compartInNu,1)
+                    if(NewDiscCompartmemt(ii) && compartInNu(jj,ii))
+                        discCompartment(jj) = 1;
+                        sumTimes(jj) = 0.0;
+                        RandTimes(jj) = rand;
+                    end
+                end
+            end
+        end
 
         % identify which events have occured
         IdEventsOccued = (RandTimes < (1 - exp(-sumTimes))).*discCompartment;
@@ -169,9 +176,8 @@ while ContT < tFinal
                 if(IdEventsOccued(kk))
                     % calculate time tau until event using linearisation of integral:
                     % u_k = 1-exp(- integral_{ti}^{t} f_k(s)ds )
-%                     ExpInt = exp(-(sumTimes(kk)-TrapStep(kk)));
                     ExpInt = exp(-(sumTimes(kk)-TrapStep(kk)));
-                    Props = rates(Xprev,AbsT-Dtau);
+%                     Props = rates(Xprev,AbsT-Dtau); %^computed above, reuse for speed
                     
                     tau_val_1 = log((1-RandTimes(kk))/ExpInt)/(-1*Props(kk));
                     tau_val_2 = -1;
@@ -203,23 +209,36 @@ while ContT < tFinal
                 AbsT = AbsT + Dtau1;
 
                 % implement first reaction
-                iters = iters + 1;
+                
                 X(:,iters) = X(:,iters-1) + nu(pos,:)';
                 Xprev = X(:,iters-1);
+                Xcurr = X(:,iters);
                 TauArr(iters) = AbsT;
+                iters = iters + 1;
+                
+                Props = rates(Xprev + (Dtau1*(~DoDisc)).*dXdt,AbsT);
 
                 % Bring compartments up to date
                 sumTimes = sumTimes - TrapStep;
-                TrapStep = Dtau1*0.5*(rates(Xprev,AbsT-Dtau1) + rates(Xprev + (Dtau1*(~DoDisc)).*dXdt,AbsT));
+                TrapStep = Dtau1*0.5*(rates(Xprev,AbsT-Dtau1) + Props);
                 sumTimes = sumTimes+TrapStep;
-
+                
                 % reset timers and sums
                 RandTimes(pos) = rand;
                 sumTimes(pos) = 0.0;
-
-                % execute remainder of Euler Step
-                Dtau = Dtau-Dtau1;
-
+                
+                % Check if a compartment has become continuous. If so, update the system to this point and
+                % move the FE mesh to this point and 
+                [NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment, ~, ~, ~] = IsDiscrete(Xprev,nu,Props,rates,(Dtau-Dtau1),AbsT,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes);
+                if(nnz(NewDoCont) > nnz(DoCont))
+                    ContT = ContT - (Dtau-Dtau1);
+                    stayWhile = false;
+                else
+                    % execute remainder of Euler Step
+                    Dtau = Dtau-Dtau1;
+                end
+                
+                
             else
 %                 stayWhile = false;
             end
@@ -233,7 +252,14 @@ while ContT < tFinal
 
 
     end
+    X(:,iters) = Xcurr;
+    TauArr(iters) = ContT;
+    if(sum(NewDiscCompartmemt)==1)
+        [~,pos] = max(NewDiscCompartmemt);
+        X(pos,iters) = round(X(pos,iters));
+    end
 
+    
     AbsT = ContT;
 end
 
@@ -247,14 +273,15 @@ end
 %%
 
 
-function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp, sumTimes,RandTimes, Xprev] = IsDiscrete(X,nu,rates,dt,AbsT,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes)
+function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp, sumTimes,RandTimes, Xprev] = IsDiscrete(X,nu,Props,rates,dt,AbsT,SwitchingThreshold,DoDisc,DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes,RandTimes)
 
     Xprev = X;
     OriginalDoDisc = DoDisc;
     OriginalDoCont = DoCont;
     for ii=1:length(X)
         if(~EnforceDo(ii))
-            dX_ii = dt*sum(abs(nu(:,ii)).*rates(X,AbsT));
+%             dX_ii = dt*sum(abs(nu(:,ii)).*rates(X,AbsT));
+            dX_ii = dt*sum(abs(nu(:,ii)).*Props);
 %             dX_ii = (abs(nu(:,ii)).*rates(X,AbsT));
             
             if(dX_ii >= SwitchingThreshold(1))
@@ -270,40 +297,25 @@ function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp, sumTimes,RandT
                 end
             end
 
-%             if(OriginalDoCont(ii) && DoDisc(ii))
-% 
-%                 % This needs a better solution \TODO
-%                 if(Xprev(ii) < SwitchingThreshold(2))
-%                 	Xprev(ii) = round(X(ii));
-%                 end
-%             end
         end
 
     end
     discCompartmentTmp = zeros(size(compartInNu,1),1);
     contCompartmentTmp = ones(size(compartInNu,1),1);
     for ii=1:length(X)
-        if(~EnforceDo(ii))
-            for jj = 1:size(compartInNu,1)
+        for jj = 1:size(compartInNu,1)
+            if(~EnforceDo(ii))
                 if(DoDisc(ii) && compartInNu(jj,ii))
                     discCompartmentTmp(jj) = 1;
-%                     if(~OriginalDoDisc(ii))
-%                         sumTimes(jj) = 0.0;
-%                         RandTimes(jj) = rand;
-%                     end
                 end
-            end
-        end
-    end
-    for ii=1:length(X)
-        if(EnforceDo(ii))
-            for jj = 1:size(compartInNu,1)
+            else
                 if(OriginalDoDisc(ii) && compartInNu(jj,ii))
                     discCompartmentTmp(jj) = 1;
                 end
             end
         end
     end
+
     contCompartmentTmp = contCompartmentTmp - discCompartmentTmp;
 
 end

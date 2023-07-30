@@ -1,6 +1,10 @@
 import numpy as np
+import time
 import matplotlib.pyplot as plt
 from Solver import MovingFEMesh_cdsSimulator
+
+import cProfile
+
 
 #   | mBirth*N
 #   v
@@ -11,28 +15,28 @@ from Solver import MovingFEMesh_cdsSimulator
 #   V                       V                       V
 #
 
-# np.random.seed(3)
+np.random.seed(3)
 
 # These define the rates of the system
 mBeta = 2/7  # Infect "___" people a week
-mGamma = 1/7  # infecion for "___" weeks
-mDeath = 1/(1*365)  # lifespan
+mGamma = 0.5/7  # infecion for "___" weeks
+mDeath = 1/(2*365)  # lifespan
 mBirth = mDeath
 
 R_0 = mBeta/(mGamma+mDeath)
 
 # These are the initial conditions
-N0 = 10**4
-I0 = 2
+N0 = 10**5
+I0 = 20
 R0 = 0
 S0 = N0-I0-R0
 
 # How long to simulate for
-tFinal = 500
+tFinal = 1000
 
 # These are solver options
 dt = 10**-2
-SwitchingThreshold = np.array([0.2, 20])
+SwitchingThreshold = np.array([0.2, 1000])
 
 # kinetic rate parameters
 X0 = np.array([S0, I0, R0])
@@ -69,20 +73,29 @@ def rates(X, t):
 
 # identify which reactions are discrete and which are continuous
 # make sure that the shape of DoDisc is (3,1)
-DoDisc = np.array([[0, 1, 0]]).T
+DoDisc = np.array([[0, 0, 0]]).T
 
 # allow S and I to switch, but force R to be continuous
-EnforceDo = np.array([[1, 0, 1]]).T
+EnforceDo = np.array([[0, 0, 0]]).T
 
 stoich = {'nu': nu, 'DoDisc': DoDisc}
 solTimes = np.arange(0, tFinal+dt, dt)
 myOpts = {'EnforceDo': EnforceDo, 'dt': dt, 'SwitchingThreshold': SwitchingThreshold}
 
+start_time = time.time()
+
+# use python profiler to see where the time is spent
+
+# cProfile.run('MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts)')
 X, TauArr = MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts)
 
-plt.plot(TauArr, X[0], label='S', marker='.', linestyle='', color='blue')
-plt.plot(TauArr, X[1], label='I', marker='.', linestyle='', color='red')
-plt.plot(TauArr, X[2], label='R', marker='.', linestyle='', color='green')
+end_time = time.time()
+elapsed_time = end_time - start_time
+print("Elapsed time:", elapsed_time, "seconds")
+
+plt.plot(TauArr, X[0], label='S', marker='.', linestyle='-', color='blue')
+plt.plot(TauArr, X[1], label='I', marker='.', linestyle='-', color='red')
+plt.plot(TauArr, X[2], label='R', marker='.', linestyle='-', color='green')
 
 plt.xlabel('time')
 plt.ylabel('Number of People')
@@ -94,5 +107,5 @@ plt.show()
 
 plt.yscale("log")
 plt.xscale("log")
-plt.plot(X[0],X[1], label='S', marker='.', linestyle='', color='blue')
+plt.plot(X[0],X[1], label='S', marker='.', linestyle='-', color='blue')
 plt.show()

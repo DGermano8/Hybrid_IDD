@@ -1,41 +1,99 @@
+% clear all;
+close all;
 
-%CDSSIMULATOR  Sample from CD-switching process.
-%   [X,TAUARR] = cdsSimulator(X0, RATES, STOICH, TIMES, OPTIONS)
-%   simulates from the continuous-discrete-switching process with flow
-%   RATES and stoichiometry STOICH, starting from initial condition
-%   X0, returning the process states at the times in TIMES. The output
-%   X is a matrix with as many columns as there are species, and as
-%   many rows as there are time points in the output. The output
-%   TAUARR is a vector of time points at which the output is sampled.
+% randSeed = randSeed+1;
+% rng(3)
 %
-%   OPTIONS is a structure with the following fields:
-%   - dt: the time step used for the Euler-Maruyama discretisation of
-%     the continuous dynamics. Default: 0.01.
-%   - EnforceDo: a boolean indicating whether to enforce the discrete
-%     dynamics to be active at all times. Default: false.
-%   - SwitchingThreshold: a threshold for switching between discrete
-%     and continuous dynamics. Default: 0.1.
+%   | mBirth*N
+%   v
+%   -----   mBeta*I*S/N     -----      mGamma*I     -----
+%   | S |       --->        | I |       --->        | R |
+%   -----                   -----                   -----
+%   | mDeath*S              | mDeath*I              | mDeath*R
+%   V                       V                       V
 %
-% TODO Currently the times are only not actually used beyond using
-% TIMES(END) as the final time point.
-%
-% TODO Currently the documentation is confused about the name of the
-% function provided and the default values for options are not
-% respected.
-%
-% Author: Domenic P.J. Germano (2023).
-function [X,TauArr] = MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options)
+
+% These define the rates of the system
+mBeta = 1.0/7; % Infect "___" people a week
+mGamma = 0.6/7; % infecion for "___" weeks
+mDeath = 1/(10*365); %lifespan
+mBirth = mDeath;
+
+R_0 = mBeta/(mGamma+mDeath)
+
+% These are the initial conditions
+N0 = 10^8;
+I0 = 2;
+R0 = 0;
+S0 = N0-I0-R0;
+
+% How long to simulate for
+tFinal = 1500;
+
+% These are solver options
+dt = 10^(-2);
+SwitchingThreshold = [0.2; 200];
+
+% kinetic rate parameters
+X0 = [S0;I0;R0];
+
+
+% reactant stoichiometries
+nuMinus = [1,1,0;
+           0,1,0;
+           0,0,0;
+           1,0,0;
+           0,1,0;
+           0,0,1];
+
+% product stoichiometries
+nuPlus = [0,2,0;
+          0,0,1;
+          1,0,0;
+          0,0,0;
+          0,0,0;
+          0,0,0];
+% stoichiometric matrix
+nu = nuPlus - nuMinus;
+
+% propensity function
+k = [mBeta; mGamma; mBirth; mDeath; mDeath; mDeath];
+rates = @(X,t) k.*[(X(1)*X(2))/(X(1)+X(2)+X(3));
+                 X(2);
+                 X(1)+X(2)+X(3);
+                 X(1);
+                 X(2);
+                 X(3)];
+
+% identify which reactions are discrete and which are continuous
+DoDisc = [0; 0; 0];
+% allow S and I to switch, but force R to be continuous
+EnforceDo = [0; 0; 1];
+% allow I to switch, but force S and R to be continuous
+% EnforceDo = [1; 0; 1];
+
+%%
+stoich = struct();
+stoich.nu = nu;
+stoich.DoDisc = DoDisc;
+solTimes = 0:dt:tFinal;
+myOpts = struct();
+myOpts.EnforceDo = EnforceDo;
+myOpts.dt = dt;
+myOpts.SwitchingThreshold = SwitchingThreshold;
+
+%%
 
 %%%%%%%%%%%%%%%%% Initilise %%%%%%%%%%%%%%%%%
-X0 = x0;
+X0 = X0;
 nu = stoich.nu;
 DoDisc = stoich.DoDisc;
 DoCont = ~DoDisc;
 
-tFinal = times(end);
-dt = options.dt;
-EnforceDo = options.EnforceDo;
-SwitchingThreshold = options.SwitchingThreshold;
+tFinal = solTimes(end);
+dt = myOpts.dt;
+EnforceDo = myOpts.EnforceDo;
+SwitchingThreshold = myOpts.SwitchingThreshold;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [nRates,nCompartments] = size(nu);
@@ -242,7 +300,27 @@ if(iters < overFlowAllocation)
     TauArr((iters+1:end)) = [];
 end
 
-end
+% end
+
+%%
+
+
+subplot(1,2,1)
+hold on;
+plot(TauArr,X(1,:),'.','linewidth',1.5,'color',[0.1 0.1 0.75])
+plot(TauArr,X(2,:),'.','linewidth',1.5,'color',[0.75 0.1 0.1])
+plot(TauArr,X(3,:),'.','linewidth',1.5,'color',[0.1 0.725 0.1])
+legend('S','I','R')
+axis([0 tFinal 0 1.1*N0])
+hold off;
+
+subplot(1,2,2)
+hold on;
+plot(X(1,:),X(2,:),'.-','linewidth',1.0)
+set(gca, 'YScale', 'log')
+set(gca, 'XScale', 'log')
+ylabel('I')
+xlabel('S')
 
 %%
 
@@ -254,19 +332,22 @@ function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp, sumTimes,RandT
     OriginalDoCont = DoCont;
     for ii=1:length(X)
         if(~EnforceDo(ii))
-            dX_ii = dt*sum(abs(nu(:,ii)).*rates(X,AbsT));
-%             dX_ii = (abs(nu(:,ii)).*rates(X,AbsT));
+%             dX_ii = dt*sum(abs(nu(:,ii)).*rates(X,AbsT));
+            dX_ii = (abs(nu(:,ii)).*rates(X,AbsT));
             
-            if(dX_ii >= SwitchingThreshold(1))
-%             if(sum(1./dX_ii(dX_ii>0) < dt)>0)
+            % the fast reaction
+%             if(dX_ii >= SwitchingThreshold(1))
+            if(sum(1./dX_ii(dX_ii>0) < dt)>0)
                 DoCont(ii) = 1;
                 DoDisc(ii) = 0;
-            elseif(Xprev(ii) < SwitchingThreshold(2))
-                DoCont(ii) = 0;
-                DoDisc(ii) = 1;
             else
-                DoCont(ii) = 0;
-                DoDisc(ii) = 1;
+                if(Xprev(ii) > SwitchingThreshold(2))
+                    DoCont(ii) = 1;
+                    DoDisc(ii) = 0;
+                else
+                    DoCont(ii) = 0;
+                    DoDisc(ii) = 1;
+                end
             end
 
 %             if(OriginalDoCont(ii) && DoDisc(ii))

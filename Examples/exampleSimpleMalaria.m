@@ -1,9 +1,9 @@
 clear all;
-close all;
+% close all;
 addpath('Solver');
 
 % randSeed = randSeed+1;
-rng(26)
+% rng(26)
 
 %                           (3)
 %                       mOmega*R_H
@@ -47,11 +47,11 @@ SM0 = NM0-IM0-EM0;
 X0 = [SH0;IH0;RH0;SM0;EM0;IM0];
 
 % How long to simulate for
-tFinal = 150;
+tFinal = 1000;
 
 % These are solver options
-dt = 10^(-4);
-SwitchingThreshold = [0.2; 20];
+dt = 10^(-3);
+SwitchingThreshold = [0.2; 200];
 
 
 
@@ -71,7 +71,7 @@ nu = [-1    1    0    0    0   0;  % 1
 %              [1   2      3       4       5   6       7     ]
 kConsts =      [mB; mBeta; mGamma; mOmega; mG; mBirth; mDeath];
 %              [1          2     3     4     5     6                7     8     9]
-kTime = @(p,t) [p(1)*p(2); p(3); p(4); p(5); p(1); p(6)*(1+cos(t/(2*pi))); p(7); p(7); p(7)];
+kTime = @(p,t) [p(1)*p(2); p(3); p(4); p(5); p(1); p(6)*(1+0.5*cos(t/(2*pi))); p(7); p(7); p(7)];
 % propensity function
 rates = @(X,t) kTime(kConsts, t).* [(X(1)*X(6))/(X(4)+X(5)+X(6));      % 1
                                     X(2);             % 2
@@ -85,9 +85,11 @@ rates = @(X,t) kTime(kConsts, t).* [(X(1)*X(6))/(X(4)+X(5)+X(6));      % 1
 
 % identify which reactions are discrete and which are continuous
 %        [S_H; I_H; R_H; S_M; E_M; I_M];
-DoDisc = [0;   0;   0;   0;   0;   0];
+DoDisc = [1;   1;   1;   0;   0;   0];
 % allow S and I to switch, but force R to be continuous
-EnforceDo = [1; 1; 1; 1; 1; 1];
+% EnforceDo = [0; 0; 0; 0; 0; 0];
+EnforceDo = [0; 0; 0; 1; 1; 1];
+
 % allow I to switch, but force S and R to be continuous
 % EnforceDo = [1; 0; 1];
 
@@ -102,8 +104,13 @@ myOpts.EnforceDo = EnforceDo;
 myOpts.dt = dt;
 myOpts.SwitchingThreshold = SwitchingThreshold;
 
+% tic;
+% [X,TauArr] = MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts);
+% toc;
+
 tic;
-[X,TauArr] = MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts);
+[X,TauArr] = JumpSwitchFlowSimulator_FE_Trap(X0, rates, stoich, solTimes, myOpts);
+% [X,TauArr] = JumpSwitchFlowSimulator_RK4_Simps(X0, rates, stoich, solTimes, myOpts);
 toc;
 
 %%
@@ -111,18 +118,18 @@ toc;
 f=figure;
 subplot(1,2,1)
 hold on;
-plot(TauArr,X(1,:),'.-','linewidth',1.5)
-plot(TauArr,X(2,:),'.-','linewidth',1.5)
-plot(TauArr,X(3,:),'.-','linewidth',1.5)
+plot(TauArr,X(1,:),'.','linewidth',1.5)
+plot(TauArr,X(2,:),'.','linewidth',1.5)
+plot(TauArr,X(3,:),'.','linewidth',1.5)
 legend('S_H','I_H','R_H')
 axis([0 tFinal 0 1.1*max(max(X(1:3,:)))])
 hold off;
 
 subplot(1,2,2)
 hold on;
-plot(TauArr,X(4,:),'-','linewidth',1.5)
-plot(TauArr,X(5,:),'-','linewidth',1.5)
-plot(TauArr,X(6,:),'-','linewidth',1.5)
+plot(TauArr,X(4,:),'.','linewidth',1.5)
+plot(TauArr,X(5,:),'.','linewidth',1.5)
+plot(TauArr,X(6,:),'.','linewidth',1.5)
 legend('S_M','E_M','I_M')
 axis([0 tFinal 0 1.1*max(max(X(4:6,:)))])
 hold off

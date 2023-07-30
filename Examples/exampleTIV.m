@@ -3,7 +3,7 @@ close all;
 addpath('Solver');
 
 % randSeed = randSeed+1;
-rng(4)
+% rng(4)
 %                   (1)                (2)
 %             mRectuite_Z*I*Z ----- mDeath_Z*Z
 %                        ---> | Z | --->
@@ -40,11 +40,11 @@ V0 = 10;
 Z0 = 1;
 
 % How long to simulate for
-tFinal = 4*14;
+tFinal = 2*14;
 
 % These are solver options
-dt = 10^(-3);
-SwitchingThreshold = [0.2; 20];
+dt = 10^(-4);
+SwitchingThreshold = [0.2; 200];
 
 % kinetic rate parameters
 X0 = [T0;I0;V0;Z0];
@@ -90,22 +90,12 @@ myOpts.EnforceDo = EnforceDo;
 myOpts.dt = dt;
 myOpts.SwitchingThreshold = SwitchingThreshold;
 
+randM = 6;
 
 tic;
-% profile on
-[X,TauArr] = MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts);
-% [X,TauArr] = cdsSimulator(X0, rates, stoich, solTimes, myOpts);
-% profile off
-% profile viewer
-% NOTE when I profiled this, it looked like calls to the rate function
-% where the most expensive part of the evaluation so I don't think
-% that the allocation of a dynamic array is going to be a problem.
-% There are stacks and exponentially growing allocations if this ends
-% up changing.
+rng(randM)
+[X,TauArr] = JumpSwitchFlowSimulator_1st(X0, rates, stoich, solTimes, myOpts);
 toc;
-
-%%
-
 figure;
 subplot(3,1,1)
 hold on;
@@ -121,6 +111,42 @@ legend('V')
 axis([0 tFinal 0 max((X(3,:)))])
 
 subplot(3,1,3)
+plot(TauArr,X(4,:),'.','linewidth',1.5)
+legend('Z')
+axis([0 tFinal 0 max((X(4,:)))])
+tic;
+rng(randM)
+
+[X,TauArr] = JumpSwitchFlowSimulator_RK4_Simps(X0, rates, stoich, solTimes, myOpts);
+toc;
+% profile off
+% profile viewer
+% NOTE when I profiled this, it looked like calls to the rate function
+% where the most expensive part of the evaluation so I don't think
+% that the allocation of a dynamic array is going to be a problem.
+% There are stacks and exponentially growing allocations if this ends
+% up changing.
+
+%%
+
+% figure;
+subplot(3,1,1)
+hold on;
+plot(TauArr,X(1,:),'.','linewidth',1.5)
+plot(TauArr,X(2,:),'.','linewidth',1.5)
+hold off;
+legend('T','I')
+axis([0 tFinal 0 max(max(X(1:2,:)))])
+
+
+subplot(3,1,2)
+hold on;
+plot(TauArr,X(3,:),'.','linewidth',1.5)
+legend('V')
+axis([0 tFinal 0 max((X(3,:)))])
+
+subplot(3,1,3)
+hold on;
 plot(TauArr,X(4,:),'.','linewidth',1.5)
 legend('Z')
 axis([0 tFinal 0 max((X(4,:)))])

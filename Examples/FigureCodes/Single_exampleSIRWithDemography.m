@@ -3,7 +3,7 @@
 addpath('Solver');
 
 % randSeed = randSeed+1;
-% rng(3)
+rng(1)
 %
 %   | mBirth*N
 %   v
@@ -17,7 +17,7 @@ addpath('Solver');
 % These define the rates of the system
 mBeta = 1.0/7; % Infect "___" people a week
 mGamma = 0.6/7; % infecion for "___" weeks
-mDeath = 1/(2*365); %lifespan
+mDeath = 1/(3*365); %lifespan
 mBirth = mDeath;
 
 R_0 = mBeta/(mGamma+mDeath)
@@ -29,11 +29,14 @@ R0 = 0;
 S0 = N0-I0-R0;
 
 % How long to simulate for
-tFinal = 1500;
+tFinal = 500;
 
 % These are solver options
 dt = 10^(-2);
-SwitchingThreshold = [0.3; 20];
+SwitchingThreshold = [10; round(10^(2))];
+
+% kineticate parameters
+X0 = [S0;I0;R0];
 
 % kinetic rate parameters
 X0 = [S0;I0;R0];
@@ -86,7 +89,8 @@ myOpts.SwitchingThreshold = SwitchingThreshold;
 f=figure;
 
 tic;
-[X,TauArr] = MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts);
+[X,TauArr] = Copy_2_of_MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts);
+
 toc;
 
 subplot(1,2,1)
