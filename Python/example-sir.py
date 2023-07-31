@@ -35,7 +35,7 @@ S0 = N0-I0-R0
 tFinal = 1000
 
 # These are solver options
-dt = 10**-2
+dt = 10**-3
 SwitchingThreshold = np.array([0.2, 1000])
 
 # kinetic rate parameters

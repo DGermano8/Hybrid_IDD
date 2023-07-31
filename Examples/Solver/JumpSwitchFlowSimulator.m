@@ -24,19 +24,37 @@
 % respected.
 %
 % Author: Domenic P.J. Germano (2023).
-function [X,TauArr] = JumpSwitchFlowSimulator(x0, rates, stoich, times, options)
+function [X,TauArr] = JumpSwitchFlowSimulator(x0, rates, stoich, times, options,method)
 
-%%%%%%%%%%%%%%%%% Initilise %%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Initilise %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 X0 = x0;
 nu = stoich.nu;
-DoDisc = stoich.DoDisc;
-DoCont = ~DoDisc;
+[nRates,nCompartments] = size(nu);
 
 tFinal = times(end);
-dt = options.dt;
-EnforceDo = options.EnforceDo;
-SwitchingThreshold = options.SwitchingThreshold;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Set default ODE time step
+try dt = options.dt; catch dt = 10^(-3);
+end
+
+% Set default switching thresholds
+try SwitchingThreshold = options.SwitchingThreshold; catch SwitchingThreshold = [0.2, 1000];
+end
+
+% Set default compartments to discrete
+try DoDisc = stoich.DoDisc; catch DoDisc = ones(nCompartments,1);
+end
+
+% Set default dynamics to all switching
+try EnforceDo = options.EnforceDo; catch EnforceDo = zeros(nCompartments,1);
+end
+DoCont = ~DoDisc;
+
+% Specify ODE solver: default to Forward Euler
+try ODEMethod = method; catch ODEMethod = 'FE';
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [nRates,nCompartments] = size(nu);
 
@@ -66,7 +84,6 @@ ContT = 0;
 Xprev = X0;
 Xcurr = zeros(nCompartments,1);
 
-
 while ContT < tFinal
     ContT = ContT + dt;   
     iters = iters + 1;
@@ -81,19 +98,13 @@ while ContT < tFinal
     if((sum(EnforceDo) ~= length(EnforceDo)))
          Props = rates(Xprev,AbsT-Dtau);
         [NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment] = IsDiscrete(Xprev,nu,Props,dt,SwitchingThreshold,DoDisc,DoCont,discCompartment,contCompartment, EnforceDo, compartInNu);
-
-        % move Euler mesh to ensure the new distcrete compartment is integer
+        
+        % move ODE mesh to ensure the new distcrete compartment is integer
         if(nnz(NewDoDisc) > nnz(DoDisc))
-            
-
             % this ^ identifies a state has switched to discrete
             % identify which compartment is the switch
             [~,pos] = max(NewDoDisc-DoDisc);
-            % compute propensities
-%             Props = rates(Xprev,AbsT-Dtau); %^computed above, reuse for speed
-            % Perform the Forward Euler Step
-            dXdt = sum(Props.*(contCompartment.*nu),1)';
-
+            [dt_dXdt,dXdt] = ComputeODEDerivative(Xprev,Dtau,AbsT,rates,DoCont,contCompartment,nu,ODEMethod);
             Dtau = min(dt,abs((round(Xprev(pos)) - Xprev(pos))/dXdt(pos)));
 
             if(Dtau < dt)
@@ -103,38 +114,24 @@ while ContT < tFinal
                 correctInteger = 1;
                 ContT = ContT - dt + Dtau;
                 AbsT = AbsT  - dt + Dtau;
-                Props = rates(Xprev,AbsT-Dtau);
-
+                [dt_dXdt,dXdt] = ComputeODEDerivative(Xprev,Dtau,AbsT,rates,DoCont,contCompartment,nu,ODEMethod);
             end
-
         else
             contCompartment = NewcontCompartment;
             discCompartment = NewdiscCompartment;
             DoCont = NewDoCont;
             DoDisc = NewDoDisc;
+            
+            [dt_dXdt,dXdt] = ComputeODEDerivative(Xprev,Dtau,AbsT,rates,DoCont,contCompartment,nu,ODEMethod);
         end
     else
-        Props = rates(Xprev,AbsT-Dtau);
+        [dt_dXdt,dXdt] = ComputeODEDerivative(Xprev,Dtau,AbsT,rates,DoCont,contCompartment,nu,ODEMethod);
     end
 
-    
-    % compute propensities
-%     Props = rates(Xprev,AbsT-Dtau);  %^computed above, reuse for speed
-    % Perform the Runge-Kutta Step
-    dXdt_1 = sum(Props.*(contCompartment.*nu),1)';
-    
-    Props2 = rates(Xprev+0.5*Dtau*dXdt_1,AbsT-Dtau+0.5*Dtau);
-    dXdt_2 = sum(Props2.*(contCompartment.*nu),1)'.*DoCont;
-    
-    Props3 = rates(Xprev+0.5*Dtau*dXdt_2,AbsT-Dtau+0.5*Dtau);
-    dXdt_3 = sum(Props3.*(contCompartment.*nu),1)'.*DoCont;
-    
-    Props4 = rates(Xprev+0.5*Dtau*dXdt_3,AbsT-Dtau+0.5*Dtau);
-    dXdt_4 = sum(Props4.*(contCompartment.*nu),1)'.*DoCont;
+    XTmp = X(:,iters-1) + dt_dXdt;
 
-    XTmp = X(:,iters-1) + (Dtau./6)*(dXdt_1.*DoCont + 2*dXdt_2 + 2*dXdt_3 + dXdt_4);
-        
     % switch a continuous compartment to integer if needed
+    OriginalDoDisc = DoDisc;
     if(correctInteger)
         contCompartment = NewcontCompartment;
         discCompartment = NewdiscCompartment;
@@ -142,7 +139,6 @@ while ContT < tFinal
         DoDisc = NewDoDisc;
     end
 
-    
     % Dont bother doing anything discrete if its all continuous
     stayWhile = (true)*(sum(DoCont)~=length(DoCont));
     
@@ -193,9 +189,11 @@ while ContT < tFinal
                     % Try Newtons Method to find the time to more accuracy
                     Error = 1; %This ensures we do atleast one iteration 
                     howManyHere = 1;
+
+%                     dXdt = sum(rates(Xprev,AbsT-Dtau).*(contCompartment.*nu),1)';
                     while (abs(Error) > 10^(-10) && howManyHere<2)
                         howManyHere=howManyHere+1;
-                        Props2 = rates(Xprev + (tau_val_1*(~DoDisc)).*dXdt_1,AbsT+tau_val_1);
+                        Props2 = rates(Xprev + (tau_val_1*(~OriginalDoDisc)).*dXdt,AbsT+tau_val_1);
                         Error = 0.5*tau_val_1*(Props2(kk)+Props(kk))-Integral;
                         tau_val_1 = tau_val_1 - 1./(Props2(kk))*(Error);
 
@@ -237,7 +235,7 @@ while ContT < tFinal
                 TauArr(iters) = AbsT;
                 iters = iters + 1;
                 
-                Props = rates(Xprev + (Dtau1*(~DoDisc)).*dXdt_1,AbsT);
+                Props = rates(Xprev + (Dtau1*(~OriginalDoDisc)).*dXdt,AbsT);
 
                 % Bring compartments up to date
                 sumTimes = sumTimes - TrapStep;
@@ -339,6 +337,38 @@ function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp] = IsDiscrete(X
         contCompartmentTmp = contCompartmentTmp - discCompartmentTmp;
     end
 
+end
+
+function [dt_dXdt,dXdt] = ComputeODEDerivative(Xprev,Dtau,AbsT,rates,DoCont,contCompartment,nu,ODEMethod)
+    switch ODEMethod
+        case "FE"
+            contCompartmentDOTnu = contCompartment.*nu;
+
+            dXdt = sum(rates(Xprev,AbsT-Dtau).*(contCompartmentDOTnu),1)';
+            
+            dt_dXdt = Dtau*(dXdt.*DoCont);
+            
+        case "RK4"
+            contCompartmentDOTnu = contCompartment.*nu;
+            
+            dXdt_1 = sum(rates(Xprev,AbsT-Dtau).*(contCompartmentDOTnu),1)';
+    
+            Props2 = rates(Xprev+0.5*Dtau*dXdt_1,AbsT-Dtau+0.5*Dtau);
+            dXdt_2 = sum(Props2.*(contCompartmentDOTnu),1)'.*DoCont;
+
+            Props3 = rates(Xprev+0.5*Dtau*dXdt_2,AbsT-Dtau+0.5*Dtau);
+            dXdt_3 = sum(Props3.*(contCompartmentDOTnu),1)'.*DoCont;
+
+            Props4 = rates(Xprev+0.5*Dtau*dXdt_3,AbsT-Dtau+0.5*Dtau);
+            dXdt_4 = sum(Props4.*(contCompartmentDOTnu),1)'.*DoCont;
+            
+            
+            dXdt = dXdt_1.*DoCont + 2*dXdt_2 + 2*dXdt_3 + dXdt_4;
+            dt_dXdt = (Dtau./6)*(dXdt);
+            
+        otherwise
+            error('Pick a correct model type');
+    end
 end
 
 %%

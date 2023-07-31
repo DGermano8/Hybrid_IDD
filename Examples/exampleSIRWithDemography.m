@@ -19,12 +19,12 @@ mBeta = 2/7; % Infect "___" people a week
 mGamma = 0.6/7; % infecion for "___" weeks
 mDeath = 1/(2.0*365); %lifespan
 mBirth = mDeath;
-mWane = 1/(2.0*365);
+mWane = 0/(2.0*365);
 
 R_0 = mBeta/(mGamma+mDeath)
 
 % These are the initial conditions
-N0 = 10^4;
+N0 = 10^6;
 I0 = 2;
 R0 = 0;
 S0 = N0-I0-R0;
@@ -87,13 +87,14 @@ myOpts.EnforceDo = EnforceDo;
 myOpts.dt = dt;
 myOpts.SwitchingThreshold = SwitchingThreshold;
 
-randM = 9;
+randM = 4;
 % profile on
 tic;
 rng(randM)
-[X,TauArr] = JumpSwitchFlowSimulator_FE_Trap(X0, rates, stoich, solTimes, myOpts);
+% [X,TauArr] = JumpSwitchFlowSimulator(X0, rates, stoich, solTimes, myOpts, "FE");
+[X,TauArr] = JumpSwitchFlowSimulator_FE(X0, rates, stoich, solTimes, myOpts);
 toc; 
-% figure;
+figure;
 subplot(1,2,1)
 hold on;
 plot(TauArr(1:1:end),X(1,(1:1:end)),'.-','linewidth',1.5)
@@ -110,6 +111,17 @@ set(gca, 'YScale', 'log')
 set(gca, 'XScale', 'log')
 ylabel('I')
 xlabel('S')
+
+%%
+
+% this writes the data to a .csv file to use for later.
+% mex_WriteMatrix('Results/SIR_test_2.csv',[TauArr' X'],'%10.10f',',','w+');
+% % free mex function
+% clear mex_WriteMatrix;
+
+
+
+%%
 
 tic
 rng(randM)

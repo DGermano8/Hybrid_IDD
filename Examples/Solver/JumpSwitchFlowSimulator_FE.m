@@ -24,7 +24,7 @@
 % respected.
 %
 % Author: Domenic P.J. Germano (2023).
-function [X,TauArr] = JumpSwitchFlowSimulator_FE_Trap(x0, rates, stoich, times, options)
+function [X,TauArr] = JumpSwitchFlowSimulator_FE(x0, rates, stoich, times, options)
 
 %%%%%%%%%%%%%%%%% Initilise %%%%%%%%%%%%%%%%%
 
@@ -141,6 +141,7 @@ while ContT < tFinal
     XTmp = X(:,iters-1) + Dtau*(dXdt.*DoCont);
         
     % switch a continuous compartment to integer if needed
+    OriginalDoDisc = DoDisc;
     if(correctInteger)
         contCompartment = NewcontCompartment;
         discCompartment = NewdiscCompartment;
@@ -200,7 +201,7 @@ while ContT < tFinal
                     howManyHere = 1;
                     while (abs(Error) > 10^(-10) && howManyHere<2)
                         howManyHere=howManyHere+1;
-                        Props2 = rates(Xprev + (tau_val_1*(~DoDisc)).*dXdt,AbsT+tau_val_1);
+                        Props2 = rates(Xprev + (tau_val_1*(~OriginalDoDisc)).*dXdt,AbsT+tau_val_1);
                         Error = 0.5*tau_val_1*(Props2(kk)+Props(kk))-Integral;
                         tau_val_1 = tau_val_1 - 1./(Props2(kk))*(Error);
 
@@ -242,7 +243,7 @@ while ContT < tFinal
                 TauArr(iters) = AbsT;
                 iters = iters + 1;
                 
-                Props = rates(Xprev + (Dtau1*(~DoDisc)).*dXdt,AbsT);
+                Props = rates(Xprev + (Dtau1*(~OriginalDoDisc)).*dXdt,AbsT);
 
                 % Bring compartments up to date
                 sumTimes = sumTimes - TrapStep;
