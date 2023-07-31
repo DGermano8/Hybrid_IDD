@@ -1,0 +1,48 @@
+[metadata]
+name = "birth-death example"
+filename = "birth-death.toml"
+author = "Alexander E. Zarebski"
+date = "2023-07-31"
+
+[components]
+model = "birth_death_model.BirthDeathEuler"
+time = "pypfilt.Scalar"
+sampler = "pypfilt.sampler.LatinHypercube"
+summary = "pypfilt.summary.HDF5"
+
+[time]
+start = 0.0
+until = 5.0
+steps_per_unit = 10
+summaries_per_unit = 2
+
+[observations.x]
+# model = "birth_death_model.NoisyStateObservation"
+model = "birth_death_model.UniformObservation"
+file = "birth-death-observations.ssv"
+
+[scenario.simulate]
+prior.x = { name = "constant", args.value = 2.0 }
+prior.death = { name = "constant", args.value = 1.0 }
+prior.birth = { name = "constant", args.value = 2.0 }
+
+[filter]
+particles = 10
+prng_seed = 1
+history_window = -1
+# resample.threshold = 0.25
+# regularisation.enabled = true
+
+# [scenario.forecast]
+# summary.tables.model_cints.component = "pypfilt.summary.ModelCIs"
+# summary.tables.model_cints.credible_intervals = [ 0, 25, 50, 75, 95 ]
+# summary.tables.forecasts.component = "pypfilt.summary.PredictiveCIs"
+# summary.tables.forecasts.credible_intervals = [10, 20, 40, 80]
+# prior.birth = { name = "uniform", args.loc = 1.75, args.scale = 0.5 }
+# backcast_time = 2.0
+# forecast_time = 4.0
+
+# [output]
+# credible_intervals = "demo-ode-bd-cris.ssv"
+# estimate_plot = "ode-bd-posterior-estimates.png"
+# forecast_plot = "ode-bd-posterior-forecasts.png"
