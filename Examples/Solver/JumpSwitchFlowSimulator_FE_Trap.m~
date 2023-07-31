@@ -24,21 +24,48 @@
 % respected.
 %
 % Author: Domenic P.J. Germano (2023).
-function [X,TauArr] = JumpSwitchFlowSimulator(x0, rates, stoich, times, options)
-
+function [X,TauArr] = JumpSwitchFlowSimulator_FE_Trap(x0, rates, stoich, times, options)
 %%%%%%%%%%%%%%%%% Initilise %%%%%%%%%%%%%%%%%
+
+% Set default ODE time step
+try
+    dt = options.dt;
+catch
+    dt = 10^(-3);
+end
+
+% Set default switching thresholds
+try
+    SwitchingThreshold = options.SwitchingThreshold;
+catch
+    SwitchingThreshold(1) = 0.2;
+    SwitchingThreshold(2) = 1000;
+end
+
+try
+    DoDisc = stoich.DoDisc;
+catch
+    DoDisc = ones(nCompartments,1);
+end
+
+try
+    EnforceDo = options.EnforceDo;
+catch
+    EnforceDo = 
+end
+
 X0 = x0;
 nu = stoich.nu;
-DoDisc = stoich.DoDisc;
-DoCont = ~DoDisc;
+[nRates,nCompartments] = size(nu);
+
+
 
 tFinal = times(end);
-dt = options.dt;
 EnforceDo = options.EnforceDo;
-SwitchingThreshold = options.SwitchingThreshold;
+DoCont = ~DoDisc;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[nRates,nCompartments] = size(nu);
 
 % identify which compartment is in which reaction:
 compartInNu = nu~=0;
@@ -68,7 +95,7 @@ Xcurr = zeros(nCompartments,1);
 
 
 while ContT < tFinal
-    ContT = ContT + dt;   
+    ContT = ContT + dt;  
     iters = iters + 1;
     
     Dtau = dt;
@@ -120,19 +147,9 @@ while ContT < tFinal
     
     % compute propensities
 %     Props = rates(Xprev,AbsT-Dtau);  %^computed above, reuse for speed
-    % Perform the Runge-Kutta Step
-    dXdt_1 = sum(Props.*(contCompartment.*nu),1)';
-    
-    Props2 = rates(Xprev+0.5*Dtau*dXdt_1,AbsT-Dtau+0.5*Dtau);
-    dXdt_2 = sum(Props2.*(contCompartment.*nu),1)'.*DoCont;
-    
-    Props3 = rates(Xprev+0.5*Dtau*dXdt_2,AbsT-Dtau+0.5*Dtau);
-    dXdt_3 = sum(Props3.*(contCompartment.*nu),1)'.*DoCont;
-    
-    Props4 = rates(Xprev+0.5*Dtau*dXdt_3,AbsT-Dtau+0.5*Dtau);
-    dXdt_4 = sum(Props4.*(contCompartment.*nu),1)'.*DoCont;
-
-    XTmp = X(:,iters-1) + (Dtau./6)*(dXdt_1.*DoCont + 2*dXdt_2 + 2*dXdt_3 + dXdt_4);
+    % Perform the Forward Euler Step
+    dXdt = sum(Props.*(contCompartment.*nu),1)';
+    XTmp = X(:,iters-1) + Dtau*(dXdt.*DoCont);
         
     % switch a continuous compartment to integer if needed
     if(correctInteger)
@@ -142,7 +159,6 @@ while ContT < tFinal
         DoDisc = NewDoDisc;
     end
 
-    
     % Dont bother doing anything discrete if its all continuous
     stayWhile = (true)*(sum(DoCont)~=length(DoCont));
     
@@ -150,13 +166,12 @@ while ContT < tFinal
     % Perform the Stochastic Loop
     Xcurr = XTmp;
     while stayWhile
-        AbsT
-        % Integrate the cummulative wait times using Simpsons 1/3 Rule
-        Props = rates(Xprev,AbsT-Dtau);
-        SimpsStep = (1/6)*Dtau*(Props + 4*rates(0.5*(Xprev+Xcurr),AbsT+0.5*Dtau) +rates(Xcurr,AbsT));
-        sumTimes = sumTimes+SimpsStep;
         
-        SimpsStep'
+        % Integrate the cummulative wait times using trapazoid method
+        Props = rates(Xprev,AbsT-Dtau);
+        TrapStep = Dtau*0.5*(Props + rates(Xcurr,AbsT));
+        sumTimes = sumTimes+TrapStep;
+        
         % if a compartment has /just/ become discrete, make sure it has
         % zero sumTimes and rest the randTimes
         for ii=1:length(Xprev)
@@ -173,7 +188,7 @@ while ContT < tFinal
 
         % identify which events have occured
         IdEventsOccued = (RandTimes < (1 - exp(-sumTimes))).*discCompartment;
-        IdEventsOccued'
+        
         if( sum(IdEventsOccued) > 0)
             tauArray = zeros(nRates,1);
             for kk=1:length(IdEventsOccued)
@@ -181,7 +196,7 @@ while ContT < tFinal
                 if(IdEventsOccued(kk))
                     % calculate time tau until event using linearisation of integral:
                     % u_k = 1-exp(- integral_{ti}^{t} f_k(s)ds )
-                    ExpInt = exp(-(sumTimes(kk)-SimpsStep(kk)));
+                    ExpInt = exp(-(sumTimes(kk)-TrapStep(kk)));
                     
 %                     Props = rates(Xprev,AbsT-Dtau); %^computed above, reuse for speed
                     % This method explicitly assumes that the rates are
@@ -196,14 +211,14 @@ while ContT < tFinal
                     howManyHere = 1;
                     while (abs(Error) > 10^(-10) && howManyHere<2)
                         howManyHere=howManyHere+1;
-                        Props2 = rates(Xprev + (tau_val_1*(~DoDisc)).*dXdt_1,AbsT+tau_val_1);
+                        Props2 = rates(Xprev + (tau_val_1*(~DoDisc)).*dXdt,AbsT+tau_val_1);
                         Error = 0.5*tau_val_1*(Props2(kk)+Props(kk))-Integral;
                         tau_val_1 = tau_val_1 - 1./(Props2(kk))*(Error);
 
                     end
                     
                     tau_val_2 = -1;
-                    tau_val =  tau_val_1
+                    tau_val =  tau_val_1;
                     % were doing a linear approximation to solve this, so
                     % it may be off, in which case we just fix it to a
                     % small order here
@@ -216,7 +231,7 @@ while ContT < tFinal
                         tau_val = max(tau_val_1,tau_val_2);
 
                         Dtau = 0.5*Dtau;
-                        sumTimes = sumTimes - SimpsStep;
+                        sumTimes = sumTimes - TrapStep;
                     end
                     tauArray(kk) = tau_val;
                 end
@@ -238,15 +253,12 @@ while ContT < tFinal
                 TauArr(iters) = AbsT;
                 iters = iters + 1;
                 
-                Xc = Xprev + (Dtau1*(~DoDisc)).*dXdt_1;
-                Props = rates(Xc,AbsT);
+                Props = rates(Xprev + (Dtau1*(~DoDisc)).*dXdt,AbsT);
 
                 % Bring compartments up to date
-                sumTimes = sumTimes - SimpsStep;
-%                 TrapStep = Dtau1*0.5*(rates(Xprev,AbsT-Dtau1) + Props);
-                SimpsStep = (1/6)*Dtau*(rates(Xprev,AbsT-Dtau1) + 4*rates(0.5*(Xprev+Xc),AbsT+0.5*Dtau1) + Props);
-
-                sumTimes = sumTimes+SimpsStep;
+                sumTimes = sumTimes - TrapStep;
+                TrapStep = Dtau1*0.5*(rates(Xprev,AbsT-Dtau1) + Props);
+                sumTimes = sumTimes+TrapStep;
                 
                 % reset timers and sums
                 RandTimes(pos) = rand;

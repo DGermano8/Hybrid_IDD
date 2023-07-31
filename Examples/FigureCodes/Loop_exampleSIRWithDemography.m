@@ -17,13 +17,13 @@
 % These define the rates of the system
 mBeta = 1.0/7; % Infect "___" people a week
 mGamma = 0.6/7; % infecion for "___" weeks
-mDeath = 1/(3*365); %lifespan
+mDeath = 1/(1.75*365); %lifespan
 mBirth = mDeath;
 
 R_0 = mBeta/(mGamma+mDeath)
 
 % These are the initial conditions
-N0 = 10^7;
+N0 = 10^5;
 I0 = 2;
 R0 = 0;
 S0 = N0-I0-R0;
@@ -33,7 +33,7 @@ tFinal = 1000;
 
 % These are solver options
 dt = 10^(-2);
-SwitchingThreshold = [10; 2*round(10^(2))];
+SwitchingThreshold = [10; 1*round(10^(2))];
 
 % kinetic rate parameters
 X0 = [S0;I0;R0];
@@ -69,7 +69,7 @@ rates = @(X,t) k.*[(X(1)*X(2))/(X(1)+X(2)+X(3));
 % identify which reactions are discrete and which are continuous
 DoDisc = [0; 0; 0];
 % allow S and I to switch, but force R to be continuous
-EnforceDo = [0; 0; 1];
+EnforceDo = [0; 0; 0];
 % allow I to switch, but force S and R to be continuous
 % EnforceDo = [1; 0; 1];
 
@@ -88,12 +88,12 @@ f=figure;
 numbOfNoTakeOff = 0;
 numbOfFadeOut = 0;
 numbOfEndemic = 0;
-numbSims = 100;
+numbSims = 50;
 tic;
 for ii=1:numbSims
 rng(ii)
 % tic;
-[X,TauArr] = Copy_2_of_MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts);
+[X,TauArr] = JumpSwitchFlowSimulator_FE_Trap(X0, rates, stoich, solTimes, myOpts);
 % toc;
 ii
     if(X(2,end) > 0)

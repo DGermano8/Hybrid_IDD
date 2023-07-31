@@ -24,21 +24,37 @@
 % respected.
 %
 % Author: Domenic P.J. Germano (2023).
-function [X,TauArr] = JumpSwitchFlowSimulator(x0, rates, stoich, times, options)
+function [X,TauArr] = JumpSwitchFlowSimulator_FE_Trap(x0, rates, stoich, times, options)
 
 %%%%%%%%%%%%%%%%% Initilise %%%%%%%%%%%%%%%%%
+
 X0 = x0;
 nu = stoich.nu;
-DoDisc = stoich.DoDisc;
-DoCont = ~DoDisc;
+[nRates,nCompartments] = size(nu);
 
 tFinal = times(end);
-dt = options.dt;
-EnforceDo = options.EnforceDo;
-SwitchingThreshold = options.SwitchingThreshold;
+
+% Set default ODE time step
+try dt = options.dt; catch dt = 10^(-3);
+end
+
+% Set default switching thresholds
+try SwitchingThreshold = options.SwitchingThreshold; catch SwitchingThreshold = [0.2, 1000];
+end
+
+% Set default compartments to discrete
+try DoDisc = stoich.DoDisc; catch DoDisc = ones(nCompartments,1);
+end
+
+% Set default dynamics to all switching
+try EnforceDo = options.EnforceDo; catch EnforceDo = zeros(nCompartments,1);
+end
+DoCont = ~DoDisc;
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[nRates,nCompartments] = size(nu);
 
 % identify which compartment is in which reaction:
 compartInNu = nu~=0;

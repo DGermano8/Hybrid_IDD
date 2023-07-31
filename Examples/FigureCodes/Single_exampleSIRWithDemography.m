@@ -32,7 +32,7 @@ S0 = N0-I0-R0;
 tFinal = 500;
 
 % These are solver options
-dt = 10^(-2);
+% dt = 10^(-2);
 SwitchingThreshold = [10; round(10^(2))];
 
 % kineticate parameters
@@ -83,13 +83,13 @@ stoich.DoDisc = DoDisc;
 solTimes = 0:dt:tFinal;
 myOpts = struct();
 myOpts.EnforceDo = EnforceDo;
-myOpts.dt = dt;
+% myOpts.dt = dt;
 myOpts.SwitchingThreshold = SwitchingThreshold;
 
 f=figure;
 
 tic;
-[X,TauArr] = Copy_2_of_MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts);
+[X,TauArr] = JumpSwitchFlowSimulator_FE_Trap(X0, rates, stoich, solTimes, myOpts);
 
 toc;
 

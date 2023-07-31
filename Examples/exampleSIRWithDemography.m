@@ -19,13 +19,13 @@ mBeta = 2/7; % Infect "___" people a week
 mGamma = 0.6/7; % infecion for "___" weeks
 mDeath = 1/(2.0*365); %lifespan
 mBirth = mDeath;
-mWane = 0/(2.0*365);
+mWane = 1/(2.0*365);
 
 R_0 = mBeta/(mGamma+mDeath)
 
 % These are the initial conditions
-N0 = 10^5;
-I0 = 20;
+N0 = 10^4;
+I0 = 2;
 R0 = 0;
 S0 = N0-I0-R0;
 
@@ -34,7 +34,7 @@ tFinal = 1000;
 
 % These are solver options
 dt = 10^(-3);
-SwitchingThreshold = [1; 1000];
+SwitchingThreshold = [0.5; 1000];
 
 % kinetic rate parameters
 X0 = [S0;I0;R0];
@@ -70,10 +70,6 @@ rates = @(X,t) k.*[(X(1)*X(2))/(X(1)+X(2)+X(3));
                  X(3);
                  X(3)];
              
-DXDT = @(X,t) [-mBeta*(X(1)*X(2))/(X(1)+X(2)+X(3)) - mDeath*X(1) + mBirth*(X(1)+X(2)+X(3)) + mWane*X(3);
-                mBeta*(X(1)*X(2))/(X(1)+X(2)+X(3)) - mGamma*X(2) - mDeath*X(2);
-                mGamma*X(2)-mDeath*X(3) - mWane*X(3)];
-
 % identify which reactions are discrete and which are continuous
 DoDisc = [0; 0; 0];
 % allow S and I to switch, but force R to be continuous
@@ -117,7 +113,7 @@ xlabel('S')
 
 tic
 rng(randM)
-[X,TauArr] = JumpSwitchFlowSimulator_RK4_Trap(X0, rates, stoich, solTimes, myOpts);
+[X,TauArr] = GillespieDirectMethod(X0, rates, stoich, solTimes, myOpts);
 toc;
 
 % profile off

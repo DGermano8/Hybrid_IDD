@@ -22,7 +22,7 @@ S0 = N0 - I0 - R0;
 % I0 = N0*mBirth*(mBeta - mGamma - mBirth)/(mBeta*(mGamma + mBirth));
 % S0 = N0*(mGamma + mBirth)/mBeta + 5*10^6;
 % R0 = N0 - I0 - S0;
-t_final = 60;
+t_final = 1000;
 TimeMesh = 0:dt:t_final;
 
 RndSeed = 1;
