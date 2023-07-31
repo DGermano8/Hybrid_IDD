@@ -30,7 +30,7 @@ R0 = 0;
 S0 = N0-I0-R0;
 
 % How long to simulate for
-tFinal = 100;
+tFinal = 1000;
 
 % These are solver options
 dt = 10^(-3);
@@ -77,7 +77,7 @@ DXDT = @(X,t) [-mBeta*(X(1)*X(2))/(X(1)+X(2)+X(3)) - mDeath*X(1) + mBirth*(X(1)+
 % identify which reactions are discrete and which are continuous
 DoDisc = [0; 0; 0];
 % allow S and I to switch, but force R to be continuous
-EnforceDo = [1; 1; 1];
+EnforceDo = [0; 0; 0];
 % allow I to switch, but force S and R to be continuous
 % EnforceDo = [1; 0; 1];
 
@@ -117,7 +117,7 @@ xlabel('S')
 
 tic
 rng(randM)
-[X,TauArr] = JumpSwitchFlowSimulator_RK4_Simps(X0, rates, stoich, solTimes, myOpts);
+[X,TauArr] = JumpSwitchFlowSimulator_RK4_Trap(X0, rates, stoich, solTimes, myOpts);
 toc;
 
 % profile off
