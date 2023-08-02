@@ -20,6 +20,7 @@ summaries_per_unit = 2
 model = "birth_death_model.UniformObservation"
 
 [scenario.simulation1]
+simulation_name = "SDE style process"
 components.model = "birth_death_model.BirthDeathNoisy"
 prior.x = { name = "constant", args.value = 2.0 }
 prior.death = { name = "constant", args.value = 1.0 }
@@ -28,6 +29,7 @@ num_replicates = 100
 file = "simu-1-birth-death-observations.ssv"
 
 [scenario.simulation2]
+simulation_name = "ODE style process"
 components.model = "birth_death_model.BirthDeathEuler"
 prior.x = { name = "constant", args.value = 2.0 }
 prior.death = { name = "constant", args.value = 1.0 }

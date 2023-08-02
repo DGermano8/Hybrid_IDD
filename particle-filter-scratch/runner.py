@@ -9,7 +9,7 @@ matplotlib.use('QtAgg')
 import pandas as pd
 import plotnine as p9
 from plotnine import *
-
+import pdb
 
 scenario_file = 'birth-death.toml'
 instance_dict = {x.scenario_id: x for x
@@ -36,7 +36,10 @@ def simulation_plot(sim_df, name):
             + scale_y_sqrt()
             + labs(title = name))
 
-plots = [
-    simulation_plot(run_simulation(value), key)
-    for key, value in instance_dict.items()]
+plots = []
+for key, inst in instance_dict.items():
+    sim_name = inst.settings['simulation_name']
+    sim_df = run_simulation(inst)
+    plots.append(simulation_plot(sim_df, sim_name))
+
 p9.save_as_pdf_pages(plots, filename = "demo-simulations.pdf")
