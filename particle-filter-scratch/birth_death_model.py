@@ -6,7 +6,7 @@ from pypfilt.model import Model
 from pypfilt.obs import Univariate, Obs
 
 # --------------------------------------------------------------------
-# Define the process model
+# Define the process models
 # --------------------------------------------------------------------
 
 class BirthDeathEuler(Model):
@@ -39,6 +39,7 @@ class BirthDeathEuler(Model):
         deriv = (prev['birthRate'] - prev['deathRate']) * prev['x']
         curr['x'] = prev['x'] + time_step.dt * deriv
 
+
 class BirthDeathNoisy(Model):
     def field_types(self, ctx):
         """
@@ -60,8 +61,19 @@ class BirthDeathNoisy(Model):
         vec['birthRate'] = prior['birth']
         vec['deathRate'] = prior['death']
 
+    def update(self, ctx, time_step, is_forecast, prev, curr):
+        """
+        (Destructively) update the state vector `curr`.
+        """
+        rng = ctx.component['random']['model']
+        curr['birthRate'] = prev['birthRate']
+        curr['deathRate'] = prev['deathRate']
+        diff = (prev['birthRate'] - prev['deathRate']) * prev['x'] * time_step.dt
+        wein = np.sqrt(diff) * rng.normal(size=prev['x'].shape)
+        curr['x'] = np.clip(prev['x'] + diff + wein, 0, None)
+
 # --------------------------------------------------------------------
-# Define the observation model
+# Define the observation models
 # --------------------------------------------------------------------
 
 class UniformObservation(Univariate):
@@ -70,7 +82,6 @@ class UniformObservation(Univariate):
     """
     def distribution(self, ctx, snapshot):
         expected_value = snapshot.state_vec['x']
-        print(expected_value)
         return scipy.stats.randint(low=np.round(expected_value),
                                    high=np.round(expected_value+1))
 

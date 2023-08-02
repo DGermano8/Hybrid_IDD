@@ -5,7 +5,6 @@ author = "Alexander E. Zarebski"
 date = "2023-07-31"
 
 [components]
-model = "birth_death_model.BirthDeathEuler"
 time = "pypfilt.Scalar"
 sampler = "pypfilt.sampler.LatinHypercube"
 summary = "pypfilt.summary.HDF5"
@@ -19,12 +18,22 @@ summaries_per_unit = 2
 [observations.x]
 # model = "birth_death_model.NoisyStateObservation"
 model = "birth_death_model.UniformObservation"
-file = "birth-death-observations.ssv"
 
-[scenario.simulate]
+[scenario.simulation1]
+components.model = "birth_death_model.BirthDeathNoisy"
 prior.x = { name = "constant", args.value = 2.0 }
 prior.death = { name = "constant", args.value = 1.0 }
 prior.birth = { name = "constant", args.value = 2.0 }
+num_replicates = 100
+file = "simu-1-birth-death-observations.ssv"
+
+[scenario.simulation2]
+components.model = "birth_death_model.BirthDeathEuler"
+prior.x = { name = "constant", args.value = 2.0 }
+prior.death = { name = "constant", args.value = 1.0 }
+prior.birth = { name = "constant", args.value = 2.0 }
+num_replicates = 10
+file = "simu-2-birth-death-observations.ssv"
 
 [filter]
 particles = 10
