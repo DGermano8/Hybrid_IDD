@@ -11,9 +11,6 @@ import plotnine as p9
 from plotnine import *
 import pdb
 
-scenario_file = 'birth-death.toml'
-instance_dict = {x.scenario_id: x for x
-                 in pypfilt.load_instances(scenario_file)}
 
 def run_simulation(instance):
     num_reps = instance.settings['num_replicates']
@@ -36,10 +33,17 @@ def simulation_plot(sim_df, name):
             + scale_y_sqrt()
             + labs(title = name))
 
-plots = []
-for key, inst in instance_dict.items():
-    sim_name = inst.settings['simulation_name']
-    sim_df = run_simulation(inst)
-    plots.append(simulation_plot(sim_df, sim_name))
+def main():
+    scenario_file = 'birth-death.toml'
+    instance_dict = {x.scenario_id: x for x
+                     in pypfilt.load_instances(scenario_file)}
+    plots = []
+    for key, inst in instance_dict.items():
+        sim_name = inst.settings['simulation_name']
+        sim_df = run_simulation(inst)
+        plots.append(simulation_plot(sim_df, sim_name))
 
-p9.save_as_pdf_pages(plots, filename = "demo-simulations.pdf")
+    p9.save_as_pdf_pages(plots, filename = "demo-simulations.pdf")
+
+# if __name__ == '__main__':
+#     main()
