@@ -45,5 +45,6 @@ def main():
 
     p9.save_as_pdf_pages(plots, filename = "demo-simulations.pdf")
 
-# if __name__ == '__main__':
-#     main()
+
+if __name__ == '__main__':
+    main()

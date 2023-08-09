@@ -28,14 +28,23 @@ prior.birth = { name = "constant", args.value = 2.0 }
 num_replicates = 100
 file = "simu-1-birth-death-observations.ssv"
 
-[scenario.simulation2]
-simulation_name = "ODE style process"
+[scenario.simulation2a]
+simulation_name = "ODE style process (vectorised)"
 components.model = "birth_death_model.BirthDeathODE"
 prior.x = { name = "constant", args.value = 2.0 }
 prior.death = { name = "constant", args.value = 1.0 }
 prior.birth = { name = "constant", args.value = 2.0 }
 num_replicates = 10
-file = "simu-2-birth-death-observations.ssv"
+file = "simu-2a-birth-death-observations.ssv"
+
+[scenario.simulation2b]
+simulation_name = "ODE style process (non-vectorised)"
+components.model = "birth_death_model.BirthDeathODENotVec"
+prior.x = { name = "constant", args.value = 2.0 }
+prior.death = { name = "constant", args.value = 1.0 }
+prior.birth = { name = "constant", args.value = 2.0 }
+num_replicates = 10
+file = "simu-2b-birth-death-observations.ssv"
 
 [scenario.simulation3]
 simulation_name = "CTMC style process"

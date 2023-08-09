@@ -4,6 +4,7 @@ import scipy.stats
 import numpy as np
 from pypfilt.model import Model
 from pypfilt.obs import Univariate, Obs
+import pdb
 
 # --------------------------------------------------------------------
 # Define the process models
@@ -11,11 +12,52 @@ from pypfilt.obs import Univariate, Obs
 # - BirthDeathODE :: ODE
 # - BirthDeathSDE :: SDE
 # - BirthDeathCTMC :: CTMC
-# - BirthDeathHybrid :: Hybrid-CTMC-ODE
 #
 # --------------------------------------------------------------------
 
+class BirthDeathODENotVec(Model):
+    """
+    A simple birth-death process model which has been implemented with
+    a loop over the particles rather than being vectorised.
+    """
+    def field_types(self, ctx):
+        """
+        Define the state that is used to completely specify a
+        particle.
+        """
+        return [
+            ('x', np.float_),
+            ('birthRate', np.float_),
+            ('deathRate', np.float_),
+        ]
+
+    def init(self, ctx, vec):
+        """
+        Initialise the state vectors based on the prior distribution.
+        """
+        prior = ctx.data['prior']
+        for p_ix in range(ctx.settings['num_replicates']):
+            vec['x'][p_ix] = prior['x'][p_ix]
+            vec['birthRate'][p_ix] = prior['birth'][p_ix]
+            vec['deathRate'][p_ix] = prior['death'][p_ix]
+
+    def update(self, ctx, time_step, is_forecast, prev, curr):
+        """
+        Update the state vectors.
+        """
+        deriv = np.zeros(curr['birthRate'].shape)
+        for p_ix in range(ctx.settings['num_replicates']):
+            curr['birthRate'][p_ix] = prev['birthRate'][p_ix]
+            curr['deathRate'][p_ix] = prev['deathRate'][p_ix]
+            deriv = (prev['birthRate'][p_ix] - prev['deathRate'][p_ix]) * prev['x'][p_ix]
+            curr['x'][p_ix] = prev['x'][p_ix] + time_step.dt * deriv
+
+
 class BirthDeathODE(Model):
+    """
+    A simple birth-death process model which has been implemented with
+    vectorisation over the particles.
+    """
     def field_types(self, ctx):
         """
         Define the state that is used to completely specify a
