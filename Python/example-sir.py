@@ -1,29 +1,31 @@
 import numpy as np
 import time
 import matplotlib.pyplot as plt
-from Solver import MovingFEMesh_cdsSimulator
+from JSF_Solver import JumpSwithFlowSimulator
+# from JSF_Solver import JumpSwithFlowSimulator
 
 import cProfile
 
-
-#   | mBirth*N
-#   v
-#   -----   mBeta*I*S/N     -----      mGamma*I     -----
-#   | S |       --->        | I |       --->        | R |
-#   -----                   -----                   -----
-#   | mDeath*S              | mDeath*I              | mDeath*R
-#   V                       V                       V
+#
+#           --------------------------------------------------
+#           |                   mWane*R                      |
+#           v                                                |
+# mBirth*N -----   mBeta*I*S/N     -----      mGamma*I     -----
+#     ---> | S |       --->        | I |       --->        | R |
+#          -----                   -----                   -----
+#          | mDeath*S              | mDeath*I              | mDeath*R
+#          V                       V                       V
 #
 
-np.random.seed(3)
+
+# np.random.seed(3)
 
 # These define the rates of the system
 mBeta = 2/7  # Infect "___" people a week
 mGamma = 0.5/7  # infecion for "___" weeks
 mDeath = 1/(2*365)  # lifespan
 mBirth = mDeath
-
-R_0 = mBeta/(mGamma+mDeath)
+mWane = 0/(2.0*365)
 
 # These are the initial conditions
 N0 = 10**5
@@ -32,66 +34,85 @@ R0 = 0
 S0 = N0-I0-R0
 
 # How long to simulate for
-tFinal = 1000
+tFinal = 500
 
 # These are solver options
-dt = 10**-3
+dt = 10**-2
 SwitchingThreshold = np.array([0.2, 1000])
 
 # kinetic rate parameters
 X0 = np.array([S0, I0, R0])
 
 # reactant stoichiometries
-nuMinus = np.array([[1, 1, 0],
+nuReactant = np.array([[1, 1, 0],
                     [0, 1, 0],
-                    [0, 0, 0],
                     [1, 0, 0],
                     [0, 1, 0],
+                    [0, 0, 1],
+                    [1, 0, 0],
+                    [0, 1, 0],
+                    [0, 0, 1],
                     [0, 0, 1]])
 
 # product stoichiometries
-nuPlus = np.array([[0, 2, 0],
+nuProduct = np.array([[0, 2, 0],
                    [0, 0, 1],
-                   [1, 0, 0],
+                   [2, 0, 0],
+                   [1, 1, 0],
+                   [1, 0, 1],
                    [0, 0, 0],
                    [0, 0, 0],
-                   [0, 0, 0]])
+                   [0, 0, 0],
+                   [1, 0, 0]])
 
 # stoichiometric matrix
-nu = nuPlus - nuMinus
+nu = nuProduct - nuReactant
 
 # propensity function
-k = np.array([[mBeta, mGamma, mBirth, mDeath, mDeath, mDeath]]).T
+k = np.array([[mBeta, mGamma, mBirth, mBirth, mBirth, mDeath, mDeath, mDeath, mWane]]).T
 
 def rates(X, t):
     return k * np.array([[(X[0]*X[1])/(X[0]+X[1]+X[2]),
                          X[1],
-                         X[0]+X[1]+X[2],
                          X[0],
                          X[1],
+                         X[2],
+                         X[0],
+                         X[1],
+                         X[2],
                          X[2]]]).T
+
 
 # identify which reactions are discrete and which are continuous
 # make sure that the shape of DoDisc is (3,1)
-DoDisc = np.array([[0, 0, 0]]).T
+DoDisc = np.array([[1, 1, 1]]).T
 
 # allow S and I to switch, but force R to be continuous
 EnforceDo = np.array([[0, 0, 0]]).T
 
-stoich = {'nu': nu, 'DoDisc': DoDisc}
+stoich = {'nu': nu, 'DoDisc': DoDisc, 'nuReactant': nuReactant, 'nuProduct': nuProduct}
+
 solTimes = np.arange(0, tFinal+dt, dt)
 myOpts = {'EnforceDo': EnforceDo, 'dt': dt, 'SwitchingThreshold': SwitchingThreshold}
 
-start_time = time.time()
 
 # use python profiler to see where the time is spent
+# profiler = cProfile.Profile()
+# profiler.enable()
 
-# cProfile.run('MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts)')
-X, TauArr = MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts)
-
+start_time = time.time()
+X, TauArr = JumpSwithFlowSimulator(X0, rates, stoich, solTimes, myOpts)
 end_time = time.time()
 elapsed_time = end_time - start_time
 print("Elapsed time:", elapsed_time, "seconds")
+
+# profiler.disable()
+# profiler.print_stats()
+
+# pos = np.argmax(TauArr)
+# trimmed_TauArr = TauArr[:pos + 1]
+# trimmed_X = X[:, :pos + 1]
+
 
 plt.plot(TauArr, X[0], label='S', marker='.', linestyle='-', color='blue')
 plt.plot(TauArr, X[1], label='I', marker='.', linestyle='-', color='red')

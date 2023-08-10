@@ -1,34 +1,37 @@
 ---
 title: "testing SIR Code"
 format:
-  html:
+  pdf:
     code-fold: true
 jupyter: python3
 ---
 
 This code should execure the SIR example bellow:
-
-   | mBirth*N
-   v
-   -----   mBeta*I*S/N     -----      mGamma*I     -----
-   | S |       --->        | I |       --->        | R |
-   -----                   -----                   -----
-   | mDeath*S              | mDeath*I              | mDeath*R
-   V                       V                       V
+#
+#           --------------------------------------------------
+#           |                   mWane*R                      |
+#           v                                                |
+# mBirth*N -----   mBeta*I*S/N     -----      mGamma*I     -----
+#     ---> | S |       --->        | I |       --->        | R |
+#          -----                   -----                   -----
+#          | mDeath*S              | mDeath*I              | mDeath*R
+#          V                       V                       V
+#                    V                       V
 
 
 ```{python}
 import numpy as np
 import matplotlib.pyplot as plt
-from Solver2 import MovingFEMesh_cdsSimulator
+from JSF_Solver import JumpSwithFlowSimulator
 
 # np.random.seed(3)
 
 # These define the rates of the system
 mBeta = 2/7  # Infect "___" people a week
-mGamma = 0.61/7  # infecion for "___" weeks
-mDeath = 1/(1*365)  # lifespan
+mGamma = 0.5/7  # infecion for "___" weeks
+mDeath = 1/(2*365)  # lifespan
 mBirth = mDeath
+mWane = 0/(2.0*365)
 
 R_0 = mBeta/(mGamma+mDeath)
 
@@ -48,22 +51,43 @@ SwitchingThreshold = np.array([0.2, 200])
 # kinetic rate parameters
 X0 = np.array([S0, I0, R0])
 
-nu = np.array([[-1, 1, 0],
-               [0, -1, 1],
-               [1, 0, 0],
-               [-1, 0, 0],
-               [0, -1, 0],
-               [0, 0, -1]])
+# reactant stoichiometries
+nuReactant = np.array([[1, 1, 0],
+                    [0, 1, 0],
+                    [1, 0, 0],
+                    [0, 1, 0],
+                    [0, 0, 1],
+                    [1, 0, 0],
+                    [0, 1, 0],
+                    [0, 0, 1],
+                    [0, 0, 1]])
 
-               # propensity function
-k = np.array([[mBeta, mGamma, mBirth, mDeath, mDeath, mDeath]]).T
+# product stoichiometries
+nuProduct = np.array([[0, 2, 0],
+                   [0, 0, 1],
+                   [2, 0, 0],
+                   [1, 1, 0],
+                   [1, 0, 1],
+                   [0, 0, 0],
+                   [0, 0, 0],
+                   [0, 0, 0],
+                   [1, 0, 0]])
+
+# stoichiometric matrix
+nu = nuProduct - nuReactant
+
+# propensity function
+k = np.array([[mBeta, mGamma, mBirth, mBirth, mBirth, mDeath, mDeath, mDeath, mWane]]).T
 
 def rates(X, t):
     return k * np.array([[(X[0]*X[1])/(X[0]+X[1]+X[2]),
                          X[1],
-                         X[0]+X[1]+X[2],
                          X[0],
                          X[1],
+                         X[2],
+                         X[0],
+                         X[1],
+                         X[2],
                          X[2]]]).T
 
 # identify which reactions are discrete and which are continuous
@@ -73,11 +97,12 @@ DoDisc = np.array([[0, 0, 0]]).T
 # allow S and I to switch, but force R to be continuous
 EnforceDo = np.array([[0, 0, 0]]).T
 
-stoich = {'nu': nu, 'DoDisc': DoDisc}
+stoich = {'nu': nu, 'DoDisc': DoDisc, 'nuReactant': nuReactant, 'nuProduct': nuProduct}
+
 solTimes = np.arange(0, tFinal+dt, dt)
 myOpts = {'EnforceDo': EnforceDo, 'dt': dt, 'SwitchingThreshold': SwitchingThreshold}
 
-X, TauArr = MovingFEMesh_cdsSimulator(X0, rates, stoich, solTimes, myOpts)
+X, TauArr = JumpSwithFlowSimulator(X0, rates, stoich, solTimes, myOpts)
 
 plt.plot(TauArr, X[0], label='S', marker='.', linestyle='', color='blue')
 plt.plot(TauArr, X[1], label='I', marker='.', linestyle='', color='red')

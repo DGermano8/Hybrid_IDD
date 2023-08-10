@@ -30,8 +30,7 @@ function [X,TauArr] = JumpSwitchFlowSimulator_FE(x0, rates, stoich, times, optio
 
 X0 = x0;
 nu = stoich.nu;
-try nuReactant = stoich.nuReactant; catch nuReactant=zeros(size(nu));
-end
+nuReactant = stoich.nuReactant;
 
 [nRates,nCompartments] = size(nu);
 
@@ -91,7 +90,7 @@ TauArr = zeros(1,overFlowAllocation);
 iters = 1;
 
 % Track Absolute time
-AbsT = 0;
+AbsT = dt;
 ContT = 0;
 
 Xprev = X0;
@@ -100,7 +99,7 @@ Xcurr = zeros(nCompartments,1);
 NewDiscCompartmemt = zeros(nCompartments,1);
 VisitedHere = zeros(nCompartments,1);
 while ContT < tFinal
-    ContT = ContT + dt;
+    ContT = ContT + dt;  
     iters = iters + 1;
     
     Dtau = dt;
@@ -217,31 +216,31 @@ while ContT < tFinal
 
                     % Try Newtons Method to find the time to more accuracy
                     Error = 1; %This ensures we do atleast one iteration 
-%                     howManyHere = 1;
-%                     while (abs(Error) > 10^(-10) && howManyHere<10)
-%                         howManyHere=howManyHere+1;
-%                         Props2 = rates(Xprev + (tau_val_1*(OriginalDoCont)).*dXdt,AbsT+tau_val_1);
-%                         Error = 0.5*tau_val_1*(Props2(kk)+Props(kk))-Integral;
-%                         tau_val_1 = tau_val_1 - 1./(Props2(kk))*(Error);
-% 
-%                     end
+                    howManyHere = 1;
+                    while (abs(Error) > 10^(-10) && howManyHere<10)
+                        howManyHere=howManyHere+1;
+                        Props2 = rates(Xprev + (tau_val_1*(OriginalDoCont)).*dXdt,AbsT+tau_val_1);
+                        Error = 0.5*tau_val_1*(Props2(kk)+Props(kk))-Integral;
+                        tau_val_1 = tau_val_1 - 1./(Props2(kk))*(Error);
+
+                    end
                     
                     tau_val_2 = -1;
                     tau_val =  tau_val_1;
                     % were doing a linear approximation to solve this, so
                     % it may be off, in which case we just fix it to a
-%                     small order here
-                    if(tau_val < 0)
-
-                        if(abs(tau_val_1) < dt^(2))
-                            tau_val_2 = abs(tau_val_1);
-                        end
-                        tau_val_1 = 0;
-                        tau_val = max(tau_val_1,tau_val_2);
-
+                    % small order here
+%                     if(tau_val < 0)
+% 
+%                         if(abs(tau_val_1) < dt^(2))
+%                             tau_val_2 = abs(tau_val_1);
+%                         end
+%                         tau_val_1 = 0;
+%                         tau_val = max(tau_val_1,tau_val_2);
+% 
 %                         Dtau = 0.5*Dtau;
 %                         sumTimes = sumTimes - TrapStep;
-                    end
+%                     end
                     tauArray(kk) = tau_val;
                 end
             end
@@ -263,7 +262,7 @@ while ContT < tFinal
                 iters = iters + 1;
                 
 %                 Props = rates(Xprev + (Dtau1*(OriginalDoCont)).*dXdt,AbsT);
-                Props = rates(Xcurr,AbsT);
+                Props = rates(Xprev,AbsT);
 
                 % Bring compartments up to date
                 sumTimes = sumTimes - TrapStep;
@@ -273,22 +272,17 @@ while ContT < tFinal
                 % reset timers and sums
                 RandTimes(pos) = rand;
                 sumTimes(pos) = 0.0;
-                
-                % if a discrete event occures, leave the loop and start the
-                % ODE mesh again:
-                stayWhile = false;
-                ContT = ContT - Dtau + Dtau1;
-                
+                                
                 % Check if a compartment has become continuous. If so, update the system to this point and
                 % move the FE mesh to this point and 
-%                 [NewDoDisc, NewDoCont, ~, ~] = IsDiscrete(Xprev,nu,Props,dt,SwitchingThreshold,DoDisc,DoCont,discCompartment,contCompartment, EnforceDo, compartInNu);
-%                 if(nnz(NewDoCont) > nnz(DoCont))
-%                     ContT = ContT - (Dtau-Dtau1);
-%                     stayWhile = false;
-%                 else
-%                     % execute remainder of Euler Step
-%                     Dtau = Dtau-Dtau1;
-%                 end
+                [NewDoDisc, NewDoCont, ~, ~] = IsDiscrete(Xprev,nu,Props,dt,SwitchingThreshold,DoDisc,DoCont,discCompartment,contCompartment, EnforceDo, compartInNu);
+                if(nnz(NewDoCont) > nnz(DoCont))
+                    ContT = ContT - (Dtau-Dtau1);
+                    stayWhile = false;
+                else
+                    % execute remainder of Euler Step
+                    Dtau = Dtau-Dtau1;
+                end
 
                 
                 
@@ -297,7 +291,6 @@ while ContT < tFinal
             end
         else
             stayWhile = false;
-            TimePassed = TimePassed + Dtau;
         end
 
         if((AbsT > ContT) || (TimePassed >= dt))
@@ -306,9 +299,8 @@ while ContT < tFinal
 
 
     end
-    
     X(:,iters) = Xcurr;
-    TauArr(iters) = AbsT;
+    TauArr(iters) = ContT;
     if(sum(NewDiscCompartmemt)==1)
         [~,pos] = max(NewDiscCompartmemt);
         X(pos,iters) = round(X(pos,iters));
@@ -359,10 +351,10 @@ function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp] = IsDiscrete(X
 %     end
 %     dX_ii = dt*sum(abs(nu).*Props,1);
 %     condition1 = (Xprev  < SwitchingThreshold(2));
-    DoDisc = (Xprev  < SwitchingThreshold(2));
+    DoDisc = (Xprev  < SwitchingThreshold(2)).*(EnforceDo==0);
     DoCont = (DoDisc==0);
-
-    if( sum((OriginalDoDisc == DoDisc))==length(DoDisc) || (sum(EnforceDo)==length(EnforceDo)) )
+    
+    if(OriginalDoDisc == DoDisc)
         discCompartmentTmp = discCompartment;
         contCompartmentTmp = contCompartment;
     else

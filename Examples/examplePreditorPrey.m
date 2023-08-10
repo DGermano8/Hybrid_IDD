@@ -30,8 +30,8 @@ B0 = 5;
 tFinal = 200;
 
 % These are solver options
-dt = 10^(-3);
-SwitchingThreshold = [0.2; 20];
+dt = 10^(-2);
+SwitchingThreshold = [0.2; 10];
 
 % Initial condition
 X0 = [A0;B0];
@@ -41,6 +41,14 @@ nu = [-1, 1;
       -1, 1;
        1, 0;
       0, -1];
+nuProduct = [ 0, 1;
+              0, 1;
+              1, 0;
+              0, 0];
+nuReactant= [ 1, 0;
+              1, 0;
+              0, 0;
+              0, 1];
 
 % propensity function
 k = [mDeathA; mBirthB;   mBirthA; mDeathB;];
@@ -57,6 +65,9 @@ EnforceDo = [0; 0];
 
 stoich = struct();
 stoich.nu = nu;
+stoich.nuReactant = nuReactant;
+stoich.nuProduct = nuProduct;
+
 stoich.DoDisc = DoDisc;
 solTimes = 0:dt:tFinal;
 myOpts = struct();
@@ -67,7 +78,7 @@ myOpts.SwitchingThreshold = SwitchingThreshold;
 
 tic;
 % profile on
-[X,TauArr] = JumpSwitchFlowSimulator_RK4_Simps(X0, rates, stoich, solTimes, myOpts);
+[X,TauArr] = JumpSwitchFlowSimulator(X0, rates, stoich, solTimes, myOpts);
 % profile off
 % profile viewer
 toc;

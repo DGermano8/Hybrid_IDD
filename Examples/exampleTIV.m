@@ -94,31 +94,26 @@ randM = 6;
 
 tic;
 rng(randM)
-[X,TauArr] = JumpSwitchFlowSimulator_1st(X0, rates, stoich, solTimes, myOpts);
+[X,TauArr] = JumpSwitchFlowSimulator(X0, rates, stoich, solTimes, myOpts);
 toc;
 figure;
 subplot(3,1,1)
 hold on;
-plot(TauArr,X(1,:),'.','linewidth',1.5)
-plot(TauArr,X(2,:),'.','linewidth',1.5)
+plot(TauArr,X(1,:),'.-','linewidth',1.5)
+plot(TauArr,X(2,:),'.-','linewidth',1.5)
 hold off;
 legend('T','I')
 axis([0 tFinal 0 max(max(X(1:2,:)))])
 
 subplot(3,1,2)
-plot(TauArr,X(3,:),'.','linewidth',1.5)
+plot(TauArr,X(3,:),'.-','linewidth',1.5)
 legend('V')
 axis([0 tFinal 0 max((X(3,:)))])
 
 subplot(3,1,3)
-plot(TauArr,X(4,:),'.','linewidth',1.5)
+plot(TauArr,X(4,:),'.-','linewidth',1.5)
 legend('Z')
 axis([0 tFinal 0 max((X(4,:)))])
-tic;
-rng(randM)
-
-[X,TauArr] = JumpSwitchFlowSimulator_RK4_Simps(X0, rates, stoich, solTimes, myOpts);
-toc;
 % profile off
 % profile viewer
 % NOTE when I profiled this, it looked like calls to the rate function
@@ -128,26 +123,3 @@ toc;
 % up changing.
 
 %%
-
-% figure;
-subplot(3,1,1)
-hold on;
-plot(TauArr,X(1,:),'.','linewidth',1.5)
-plot(TauArr,X(2,:),'.','linewidth',1.5)
-hold off;
-legend('T','I')
-axis([0 tFinal 0 max(max(X(1:2,:)))])
-
-
-subplot(3,1,2)
-hold on;
-plot(TauArr,X(3,:),'.','linewidth',1.5)
-legend('V')
-axis([0 tFinal 0 max((X(3,:)))])
-
-subplot(3,1,3)
-hold on;
-plot(TauArr,X(4,:),'.','linewidth',1.5)
-legend('Z')
-axis([0 tFinal 0 max((X(4,:)))])
-

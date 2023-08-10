@@ -1,9 +1,12 @@
 import numpy as np
 
-def MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options):
+def JumpSwithFlowSimulator(x0, rates, stoich, times, options):
+    # predefine and initialise the system
+    # TODO - add default options
 
     X0 = x0
     nu = stoich["nu"]
+    nuReactant = stoich["nuReactant"]
     DoDisc = stoich["DoDisc"]
     DoCont = np.ones(DoDisc.shape)-DoDisc
 
@@ -15,7 +18,10 @@ def MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options):
     nRates, nCompartments = nu.shape
 
     # identify which compartment is in which reaction:
-    compartInNu = nu != 0
+    NuComp = (nu != 0)
+    ReactComp = (nuReactant != 0)
+    compartInNu = ( (NuComp+ReactComp) != 0)
+
     discCompartment = np.dot(compartInNu, DoDisc)
     discCompartment = discCompartment
     contCompartment = np.ones(discCompartment.shape)-discCompartment
@@ -36,30 +42,30 @@ def MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options):
     iters = 0
 
     # Track Absolute time
-    AbsT = dt
+    AbsT = 0
     ContT = 0
 
     Xprev = X0
     Xcurr = np.zeros(nCompartments)
     
     NewDiscCompartmemt = np.zeros(nCompartments)
-    correctInteger = 0
-    
+    correctInteger = 0   
     while ContT < tFinal:
+
         ContT = ContT + dt 
         iters = iters + 1 
 
         Dtau = dt 
-        
         Xprev = X[:, iters-1] 
-        NewDiscCompartmemt = np.zeros(nCompartments)
+        # NewDiscCompartmemt = np.zeros(nCompartments)
 
         # identify which compartment is to be modelled with Discrete and continuous dynamics
         if np.count_nonzero(EnforceDo) !=  nCompartments: #len(EnforceDo):
             
             Props = rates(Xprev, AbsT-Dtau)
 
-            NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment, _, _, _ = IsDiscrete(Xprev, nu, Props, rates, dt, AbsT, SwitchingThreshold, DoDisc, DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes, RandTimes, nCompartments)
+            NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment = IsDiscrete(Xprev, SwitchingThreshold, DoDisc, DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, nCompartments)
+
             # move Euler mesh to ensure the new distcrete compartment is integer
             correctInteger = 0
             
@@ -69,17 +75,14 @@ def MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options):
 
                 pos_ind = np.where(np.logical_and(NewDoDisc, np.logical_not(DoDisc)))
                 pos = pos_ind[0][0]
-                # compute propensities
 
-                # Props = rates(Xprev, AbsT-Dtau)
-
-                # Perform the Forward Euler Step
+                # Here, we identify the time to the next integer
                 dXdt = np.sum(Props * (contCompartment * nu), axis=0).T
-
                 Dtau = np.min([dt,abs((round(Xprev[pos]) - Xprev[pos]) / dXdt[pos])])
 
+                # If the time to the next integer is less than the time step, we need to move the mesh
                 if Dtau < dt:
-                    NewDiscCompartmemt = (np.logical_and(NewDoDisc, np.logical_not(DoDisc)) == 1)
+                    NewDiscCompartmemt = (np.logical_and(NewDoDisc, np.logical_not(DoDisc)) == 1).astype(int)
                     correctInteger = 1
                     ContT = ContT - dt + Dtau
                     AbsT = AbsT - dt + Dtau
@@ -93,9 +96,6 @@ def MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options):
         else:
             Props = rates(Xprev, AbsT-Dtau)
 
-
-        # compute propensities
-        # Props = rates(Xprev, AbsT-Dtau)
         # Perform the Forward Euler Step
         dXdt = np.sum(Props * (contCompartment * nu), axis=0).reshape(nCompartments, 1)
         
@@ -112,24 +112,25 @@ def MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options):
 
         # Dont bother doing anything discrete if its all continuous
         stayWhile = (True) * (np.count_nonzero(DoCont) != nCompartments) #len(DoCont))
-
+        
         TimePassed = 0
         # Perform the Stochastic Loop
         while stayWhile:
 
             Props = rates(Xprev, AbsT-Dtau)
-
             # Integrate the cumulative wait times using trapezoid method
             TrapStep = Dtau*0.5*(Props + rates(Xcurr, AbsT))
             sumTimes = sumTimes + TrapStep
 
-            for ii in range(nCompartments):
-                if NewDiscCompartmemt[ii] and not EnforceDo[ii]:
-                    for jj in range(nRates):
-                        if compartInNu[jj, ii]:
-                            discCompartment[jj] = 1
-                            sumTimes[jj] = 0.0
-                            RandTimes[jj] = np.random.rand()
+            # identify which compartments have become discrete
+            if(np.count_nonzero(NewDiscCompartmemt) == 1):
+                for ii in range(nCompartments):
+                    if NewDiscCompartmemt[ii] and not EnforceDo[ii]:
+                        for jj in range(nRates):
+                            if compartInNu[jj, ii]:
+                                discCompartment[jj] = 1
+                                sumTimes[jj] = 0.0
+                                RandTimes[jj] = np.random.rand()
 
             # identify which events have occurred
             IdEventsOccurred = (RandTimes < (1 - np.exp(-sumTimes))) * discCompartment
@@ -164,14 +165,14 @@ def MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options):
                         # print(tau_val_1)
                         tau_val_2 = -1
                         tau_val = tau_val_1
-                        # if tau_val_1 < 0:
-                        #     tau_val_1 = np.abs(tau_val_1)
-                        #     if abs(tau_val_1) < dt**(2):
-                        #         tau_val_2 = np.abs(tau_val_1)
-                        #     tau_val_1 = 0
-                        #     tau_val = max(tau_val_1,tau_val_2)
-                        #     Dtau = 0.5*Dtau
-                        #     sumTimes = sumTimes - TrapStep
+                        if tau_val_1 < 0:
+                            tau_val_1 = np.abs(tau_val_1)
+                            if abs(tau_val_1) < dt**(2):
+                                tau_val_2 = np.abs(tau_val_1)
+                            tau_val_1 = 0
+                            tau_val = max(tau_val_1,tau_val_2)
+                            # Dtau = 0.5*Dtau
+                            # sumTimes = sumTimes - TrapStep
 
                         tauArray[kk] = tau_val
                 # identify which reaction occurs first
@@ -192,7 +193,7 @@ def MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options):
                     TauArr[iters] = AbsT
                     iters = iters + 1
 
-                    Props = rates(Xprev + ((Dtau1*(OriginalDoCont))*dXdt).flatten(), AbsT)
+                    Props = rates(Xcurr, AbsT)
 
                     # Bring compartments up to date
                     sumTimes = sumTimes - TrapStep
@@ -203,18 +204,21 @@ def MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options):
                     RandTimes[pos] = np.random.rand()
                     sumTimes[pos] = 0.0
 
-                    # Check if a compartment has become continuous. If so, update the system to this point and
-                    # move the FE mesh to this point and 
-                    NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment, _, _, _ = IsDiscrete(Xprev, nu, Props, rates, Dtau, AbsT-Dtau, SwitchingThreshold, DoDisc, DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes, RandTimes, nCompartments)
-                    if np.count_nonzero(NewDoCont) > np.count_nonzero(DoCont):
-                        ContT = ContT - (Dtau-Dtau1)
-                        stayWhile = False
-                    else:
-                        # execute remainder of Euler Step
-                        Dtau = Dtau-Dtau1
+                    stayWhile = False
 
-                    # execute remainder of Euler Step
-                    Dtau = Dtau - Dtau1
+                    # # Check if a compartment has become continuous. If so, update the system to this point and
+                    # # move the FE mesh to this point and 
+                    # NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment = IsDiscrete(Xprev, SwitchingThreshold, DoDisc, DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, nCompartments)
+
+                    # if np.count_nonzero(NewDoCont) > np.count_nonzero(DoCont):
+                    #     ContT = ContT - (Dtau-Dtau1)
+                    #     stayWhile = False
+                    # else:
+                    #     # execute remainder of Euler Step
+                    #     Dtau = Dtau-Dtau1
+
+                    # # execute remainder of Euler Step
+                    # Dtau = Dtau - Dtau1
 
                 else:
                     stayWhile = False
@@ -225,7 +229,7 @@ def MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options):
                 stayWhile = False
 
         X[:, iters] = Xcurr
-        TauArr[iters] = ContT
+        TauArr[iters] = AbsT
 
         if np.count_nonzero(NewDiscCompartmemt) == 1:
             pos = np.argmax(NewDiscCompartmemt)
@@ -242,38 +246,28 @@ def MovingFEMesh_cdsSimulator(x0, rates, stoich, times, options):
 
     return X, TauArr
 
-def IsDiscrete(X, nu, Props, rates, dt, AbsT, SwitchingThreshold, DoDisc, DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, sumTimes, RandTimes, nCompartments):
+def IsDiscrete(X, SwitchingThreshold, DoDisc, DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, nCompartments):
     
-    Xprev = X.copy()
     DoDiscTmp = DoDisc.copy()
     DoContTmp = DoCont.copy()    
 
-    # # Calculate dX_ii using vectorized operations
-    # dX_ii = dt * np.sum(np.abs(nu) * Props, axis=0)
-
-    # # Calculate conditions for DoContTmp and DoDiscTmp using vectorized operations
-    # condition1 = (dX_ii >= SwitchingThreshold[0])
-    # condition2 = (X > SwitchingThreshold[1])
-
-    # # Set values for DoContTmp and DoDiscTmp using vectorized operations
-    # DoContTmp = np.where(condition1 | condition2, 1, 0).reshape(DoContTmp.shape)
-    # DoDiscTmp = np.where(~condition1 & (~condition2), 1, 0).reshape(DoDiscTmp.shape)
-
-    # condition2 = (X > SwitchingThreshold[1])
-
-    # # Set values for DoContTmp and DoDiscTmp using vectorized operations
-    # DoContTmp = np.where(condition2, 1, 0).reshape(DoContTmp.shape)
-    # DoDiscTmp = np.where((~condition2), 1, 0).reshape(DoDiscTmp.shape)
-    # DoDiscTmp = ((X.reshape(DoContTmp.shape) < SwitchingThreshold[1])*(EnforceDo==0)).reshape(DoContTmp.shape)
-    DoDiscTmp = (X.reshape(DoDisc.shape) < SwitchingThreshold[1]) * (EnforceDo == 0)
+    # Check if any compartments should be switched to continuous
+    DoDiscTmp = (X.reshape(DoDisc.shape) < SwitchingThreshold[1]).astype(int)
     DoContTmp = np.ones(DoDiscTmp.shape) - DoDiscTmp
 
-    # are_equal = DoDiscTmp.flatten() == DoDisc.flatten()
+    # Set values for DoContTmp and DoDiscTmp using original values
+    for idx, x in enumerate(EnforceDo):
+        if x == 1:
+            DoDiscTmp[idx] = DoDisc[idx]
+            DoContTmp[idx] = DoCont[idx]            
+
+    # Check if the new DoDiscTmp and DoContTmp are the same as the old ones
     are_equal = DoDiscTmp == DoDisc
-    if (np.count_nonzero(are_equal) == nCompartments): #len(are_equal)):
+    if (np.count_nonzero(are_equal) == nCompartments):
         discCompartmentTmp = discCompartment.copy()
         contCompartmentTmp = contCompartment.copy()
     else:
+        # If not, update the compartments
         discCompartmentTmp = np.zeros(discCompartment.shape)
         contCompartmentTmp = np.ones(contCompartment.shape)
 
@@ -286,5 +280,6 @@ def IsDiscrete(X, nu, Props, rates, dt, AbsT, SwitchingThreshold, DoDisc, DoCont
                     if DoDisc[idx]==1 and compartInNu[compartIdx, idx]==1:
                         discCompartmentTmp[compartIdx] = 1
         contCompartmentTmp -= discCompartmentTmp
+    
 
-    return DoDiscTmp, DoContTmp, discCompartmentTmp, contCompartmentTmp, sumTimes, RandTimes, Xprev
+    return DoDiscTmp, DoContTmp, discCompartmentTmp, contCompartmentTmp

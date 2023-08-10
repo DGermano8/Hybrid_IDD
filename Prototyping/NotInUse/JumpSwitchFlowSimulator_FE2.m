@@ -303,24 +303,29 @@ function [DoDisc, DoCont, discCompartmentTmp, contCompartmentTmp] = IsDiscrete(X
     OriginalDoDisc = DoDisc;
     OriginalDoCont = DoCont;
     
-    dX_ii = dt*sum(abs(nu).*Props,1);
-    for ii=1:length(Xprev)
-        if(~EnforceDo(ii))
-            if(dX_ii(ii) >= SwitchingThreshold(1))
-                DoCont(ii) = 1;
-                DoDisc(ii) = 0;
-            else
-                if(Xprev(ii) > SwitchingThreshold(2))
-                    DoCont(ii) = 1;
-                    DoDisc(ii) = 0;
-                else
-                    DoCont(ii) = 0;
-                    DoDisc(ii) = 1;
-                end
-            end
-        end
-    end
-
+%     dX_ii = dt*sum(abs(nu).*Props,1);
+%     for ii=1:length(Xprev)
+%         if(~EnforceDo(ii))
+%             if(dX_ii(ii) >= SwitchingThreshold(1))
+%                 DoCont(ii) = 1;
+%                 DoDisc(ii) = 0;
+%             else
+%                 if(Xprev(ii) > SwitchingThreshold(2))
+%                     DoCont(ii) = 1;
+%                     DoDisc(ii) = 0;
+%                 else
+%                     DoCont(ii) = 0;
+%                     DoDisc(ii) = 1;
+%                 end
+%             endGil_Average
+%         end
+%     end
+%     dX_ii = dt*sum(abs(nu).*Props,1);
+    condition1 = (Xprev  > SwitchingThreshold(2));
+    condition2 = ~EnforceDo;
+    DoDisc = (~condition1.*condition2);
+    DoCont = (~DoDisc);
+    
     if(OriginalDoDisc == DoDisc)
         discCompartmentTmp = discCompartment;
         contCompartmentTmp = contCompartment;

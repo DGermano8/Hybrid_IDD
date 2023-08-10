@@ -25,13 +25,13 @@ addpath('Solver');
 %               (7)              (8)             (9)
 %
 % These define the rates of the system
-mB = 0.5;          % 10 bites a day
-mBeta = 0.01;      % Successful transfer of parasite
+mB = 0.05;          % 10 bites a day
+mBeta = 0.1;      % Successful transfer of parasite
 mGamma = 1/7;     % 1 week to recover
 mOmega = 1/14; % 1 yeah of immunity
-mG = 1;
-mDeath = 0.2;
-mBirth = 0.2;
+mG = 0.05;
+mDeath = 0.002;
+mBirth = 0.002;
 
 % These are the initial conditions
 NH0 = 10^3;
@@ -50,7 +50,7 @@ X0 = [SH0;IH0;RH0;SM0;EM0;IM0];
 tFinal = 1000;
 
 % These are solver options
-dt = 10^(-3);
+dt = 10^(-2);
 SwitchingThreshold = [0.2; 200];
 
 
@@ -60,12 +60,22 @@ SwitchingThreshold = [0.2; 200];
 nu = [-1    1    0    0    0   0;  % 1
       0    -1    1    0    0   0;  % 2
       1     0   -1    0    0   0;  % 3
-      0     0    0    0   -1   1;  % 4
+      0     0    0    0    0   0;  % 4
       0     0    0   -1    1   0;  % 5
       0     0    0    1    0   0;  % 6
       0     0    0    0    0  -1;  % 7
       0     0    0    0   -1   0;  % 8
       0     0    0   -1    0   0]; % 9
+        %   [S_H; I_H; R_H; S_M; E_M; I_M];
+nuReactant = [ 1     1    0    0    0   0;  % 1
+               0     1    0    0    0   0;  % 2
+               0     0    1    0    0   0;  % 3
+               0     0    0    0    1   0;  % 4
+               0     0    0    1    0   0;  % 5
+               0     0    0    1    0   0;  % 6
+               0     0    0    0    0   1;  % 7
+               0     0    0    0    1   0;  % 8
+               0     0    0    1    0   0]; % 9
 
 % kinetic rate parameters
 %              [1   2      3       4       5   6       7     ]
@@ -85,10 +95,10 @@ rates = @(X,t) kTime(kConsts, t).* [(X(1)*X(6))/(X(4)+X(5)+X(6));      % 1
 
 % identify which reactions are discrete and which are continuous
 %        [S_H; I_H; R_H; S_M; E_M; I_M];
-DoDisc = [1;   1;   1;   0;   0;   0];
+DoDisc = [0;   0;   0;   0;   0;   0];
 % allow S and I to switch, but force R to be continuous
 % EnforceDo = [0; 0; 0; 0; 0; 0];
-EnforceDo = [0; 0; 0; 1; 1; 1];
+EnforceDo = [1; 1; 1; 1; 1; 1];
 
 % allow I to switch, but force S and R to be continuous
 % EnforceDo = [1; 0; 1];
@@ -97,6 +107,7 @@ EnforceDo = [0; 0; 0; 1; 1; 1];
 
 stoich = struct();
 stoich.nu = nu;
+stoich.nuReactant = nuReactant;
 stoich.DoDisc = DoDisc;
 solTimes = 0:dt:tFinal;
 myOpts = struct();
@@ -109,7 +120,7 @@ myOpts.SwitchingThreshold = SwitchingThreshold;
 % toc;
 
 tic;
-[X,TauArr] = JumpSwitchFlowSimulator_FE_Trap(X0, rates, stoich, solTimes, myOpts);
+[X,TauArr] = JumpSwitchFlowSimulator(X0, rates, stoich, solTimes, myOpts);
 % [X,TauArr] = JumpSwitchFlowSimulator_RK4_Simps(X0, rates, stoich, solTimes, myOpts);
 toc;
 
