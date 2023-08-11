@@ -69,18 +69,17 @@ nuProduct = np.array([[0, 2, 0],
 nu = nuProduct - nuReactant
 
 # propensity function
-k = np.array([[mBeta, mGamma, mBirth, mBirth, mBirth, mDeath, mDeath, mDeath, mWane]]).T
-
 def rates(X, t):
-    return k * np.array([[(X[0]*X[1])/(X[0]+X[1]+X[2]),
-                         X[1],
-                         X[0],
-                         X[1],
-                         X[2],
-                         X[0],
-                         X[1],
-                         X[2],
-                         X[2]]]).T
+    return np.array([[mBeta*(X[0]*X[1])/(X[0]+X[1]+X[2]),
+                     mGamma*X[1],
+                     mBirth*X[0],
+                     mBirth*X[1],
+                     mBirth*X[2],
+                     mDeath*X[0],
+                     mDeath*X[1],
+                     mDeath*X[2],
+                     mWane*X[2]]]).T
+                     
 
 
 # identify which reactions are discrete and which are continuous
@@ -108,10 +107,6 @@ print("Elapsed time:", elapsed_time, "seconds")
 
 # profiler.disable()
 # profiler.print_stats()
-
-# pos = np.argmax(TauArr)
-# trimmed_TauArr = TauArr[:pos + 1]
-# trimmed_X = X[:, :pos + 1]
 
 
 plt.plot(TauArr, X[0], label='S', marker='.', linestyle='-', color='blue')

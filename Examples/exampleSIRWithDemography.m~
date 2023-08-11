@@ -18,20 +18,20 @@ addpath('Solver');
 % These define the rates of the system
 mBeta = 2.0/7; % Infect "___" people a week
 mGamma = 1.0/7; % infecion for "___" weeks
-mDeath = 1/(65.0*365); %lifespan
+mDeath = 1/(80.0*365); %lifespan
 mBirth = mDeath;
-mWane = 1/(1.0*365);
+mWane = 1/(2.0*365);
 
-% R_0 = mBeta/(mGamma+mDeath)
+R_0 = mBeta/(mGamma+mDeath)
 
 % These are the initial conditions
-N0 = 10^7;
-I0 = 20;
+N0 = 10^4;
+I0 = 2;
 R0 = 0;
 S0 = N0-I0-R0;
 
 % How long to simulate for
-tFinal = 4*365;
+tFinal = 100;
 
 % These are solver options
 dt = 0.01;
@@ -92,7 +92,7 @@ rates = @(X,t) [mBeta*(X(1)*X(2))/(X(1)+X(2)+X(3));
 DoDisc = [0; 0; 0];
 % allow S and I to switch, but force R to be continuous
 % EnforceDo = [1; 1; 1];
-EnforceDo = [0; 0; 0];
+EnforceDo = [1; 1; 1];
 % allow I to switch, but force S and R to be continuous
 % EnforceDo = [1; 0; 1];
 
@@ -110,6 +110,17 @@ myOpts.SwitchingThreshold = SwitchingThreshold;
 randM = randM + 1;
 % profile on
 rng(randM)
+
+tic;
+[X,TauArr] = JumpSwitchFlowSimulator(X0, rates, stoich, solTimes, myOpts);
+toc;
+hold on;
+plot(TauArr(1:1:end),X(1,(1:1:end)),'.-','linewidth',1.5)
+plot(TauArr(1:1:end),X(2,(1:1:end)),'.-','linewidth',1.5)
+plot(TauArr(1:1:end),X(3,(1:1:end)),'.-','linewidth',1.5)
+legend('S','I','R')
+axis([0 tFinal 0 1.1*N0])
+hold off;
 
 rng(randM)
 
@@ -140,21 +151,14 @@ hold off;
 % xlabel('S')
 
 %%
-x = zeros(3,length(solTimes));
-x(:,1) = X0';
+x = zeros(1,length(solTimes));
+x(1,:) = X0;
 for ii=2:length(solTimes)
-    Props = rates(x(:,ii-1),solTimes(ii));
-    dXdt = (Props'*nu)';
-    x(:,ii) = x(:,ii-1) + dt*dXdt;
+    Xprev = 
+    Props = rates(x(ii-1),solTimes(ii));
+    dXdt = sum(Props.*nu);
+    
 end
-
-hold on;
-plot(solTimes(1:1:end),x(1,(1:1:end)),'.-','linewidth',1.5)
-plot(solTimes(1:1:end),x(2,(1:1:end)),'.-','linewidth',1.5)
-plot(solTimes(1:1:end),x(3,(1:1:end)),'.-','linewidth',1.5)
-legend('S','I','R')
-axis([0 tFinal 0 1.1*N0])
-hold off;
 
 %%
 % rng(randM)

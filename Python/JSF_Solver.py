@@ -30,10 +30,11 @@ def JumpSwithFlowSimulator(x0, rates, stoich, times, options):
     contCompartment = np.ones(discCompartment.shape)-discCompartment
 
     # initialise discrete sum compartments
-    integralOfFiringTimes = np.zeros(nRates).reshape(nRates, 1)
-    randTimes = np.random.rand(nRates).reshape(nRates, 1)
+    integralOfFiringTimes = np.zeros((nRates,1))
+    # randTimes = np.random.rand(nRates).reshape(nRates, 1)
+    randTimes = np.random.rand(nRates,1)
     # print(RandTimes)
-    tauArray = np.zeros(nRates).reshape(nRates, 1)
+    tauArray = np.zeros((nRates,1))
 
     TimeMesh = np.arange(0, tFinal+dt, dt)
     overFlowAllocation = round(10 * len(TimeMesh))
@@ -54,7 +55,6 @@ def JumpSwithFlowSimulator(x0, rates, stoich, times, options):
     NewDiscCompartmemt = np.zeros(nCompartments, dtype=int)
     correctInteger = 0
 
-   
     while ContT < tFinal:
 
         Xprev = X[:,iters]
@@ -133,7 +133,7 @@ def JumpSwithFlowSimulator(x0, rates, stoich, times, options):
             
         if correctInteger == 1:
             pos = np.argmax(NewDiscCompartmemt)
-            X[pos, iters] = round(X[pos, iters]) # type: ignore
+            X[pos, iters] = round(X[pos, iters])
 
             for jj in range(nRates):
                 if compartInNu[jj, pos]:
@@ -233,7 +233,6 @@ def UpdateCompartmentRegime(dt, Xprev, Dtau, Props, nu, SwitchingThreshold, DoDi
 def IsDiscrete(X, SwitchingThreshold, DoDisc, DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, nCompartments): 
     # Check if any compartments should be switched to continuous
     DoDiscTmp = (X.reshape(DoDisc.shape) < SwitchingThreshold[1]).astype(int)
-    # DoContTmp = np.ones(DoDiscTmp.shape) - DoDiscTmp
     DoContTmp = DoDiscTmp^1
 
     # Set values for DoContTmp and DoDiscTmp using original values
