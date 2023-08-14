@@ -186,7 +186,7 @@ while ContT < tFinal
 
     iters = iters + 1;
     ContT = ContT + (DtauContStep);
-    X(:,iters) = X(:,iters-1) + (DtauContStep-TimePassed)*dXdt;
+    X(:,iters) = X(:,iters-1) + (DtauContStep-TimePassed)*(dXdt.*DoCont);
     
     
     

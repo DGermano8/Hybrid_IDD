@@ -38,7 +38,7 @@ tFinal = 500
 
 # These are solver options
 dt = 10**-2
-SwitchingThreshold = np.array([0.2, 1000])
+SwitchingThreshold = np.array([10**3, 10**3, 10**3])
 
 # kinetic rate parameters
 X0 = np.array([S0, I0, R0])

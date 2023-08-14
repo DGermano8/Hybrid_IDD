@@ -25,17 +25,17 @@ mWane = 1/(1.0*365);
 % R_0 = mBeta/(mGamma+mDeath)
 
 % These are the initial conditions
-N0 = 10^7;
+N0 = 10^6;
 I0 = 20;
 R0 = 0;
 S0 = N0-I0-R0;
 
 % How long to simulate for
-tFinal = 4*365;
+tFinal = 500;2*365;
 
 % These are solver options
 dt = 0.01;
-SwitchingThreshold = [0.5; 10^4];
+SwitchingThreshold = [0.5; 10^3];
 
 % kinetic rate parameters
 X0 = [S0;I0;R0];
@@ -107,6 +107,7 @@ myOpts.EnforceDo = EnforceDo;
 myOpts.dt = dt;
 myOpts.SwitchingThreshold = SwitchingThreshold;
 
+randM = 1;
 randM = randM + 1;
 % profile on
 rng(randM)
@@ -114,7 +115,7 @@ rng(randM)
 rng(randM)
 
 tic;
-[X,TauArr] = Copy_of_JumpSwitchFlowSimulator(X0, rates, stoich, solTimes, myOpts);
+[X,TauArr] = JumpSwitchFlowSimulator(X0, rates, stoich, solTimes, myOpts);
 
 % profile off
 % profile viewer

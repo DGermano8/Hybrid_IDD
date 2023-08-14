@@ -27,22 +27,23 @@ def JumpSwithFlowSimulator(x0, rates, stoich, times, options):
 
     discCompartment = np.dot(compartInNu, DoDisc)
     discCompartment = discCompartment
-    contCompartment = np.ones(discCompartment.shape)-discCompartment
+    contCompartment = np.ones(nCompartments)-discCompartment
 
     # initialise discrete sum compartments
-    integralOfFiringTimes = np.zeros((nRates,1))
+    integralOfFiringTimes = np.zeros((nRates,1), dtype=float)
     # randTimes = np.random.rand(nRates).reshape(nRates, 1)
     randTimes = np.random.rand(nRates,1)
-    # print(RandTimes)
-    tauArray = np.zeros((nRates,1))
+
+    tauArray = np.zeros((nRates,1), dtype=float)
 
     TimeMesh = np.arange(0, tFinal+dt, dt)
     overFlowAllocation = round(10 * len(TimeMesh))
 
     # initialise solution arrays
-    X = np.zeros((nCompartments, overFlowAllocation))
+    X = np.zeros((nCompartments, overFlowAllocation), dtype=float)
     X[:, 0] = X0
-    TauArr = np.zeros(overFlowAllocation)
+
+    TauArr = np.zeros(overFlowAllocation, dtype=float)
     iters = 0
 
     # Track Absolute time
@@ -50,7 +51,7 @@ def JumpSwithFlowSimulator(x0, rates, stoich, times, options):
     ContT = 0
 
     Xprev = X0
-    Xcurr = np.zeros(nCompartments)
+    Xcurr = np.zeros(nCompartments, dtype=float)
     
     NewDiscCompartmemt = np.zeros(nCompartments, dtype=int)
     correctInteger = 0
@@ -62,12 +63,13 @@ def JumpSwithFlowSimulator(x0, rates, stoich, times, options):
         Props = rates(Xprev, ContT)
 
         # check if any states change in this step
-        Dtau, correctInteger, DoDisc, DoCont, discCompartment, contCompartment, NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment, NewDiscCompartmemt = UpdateCompartmentRegime(dt, Xprev, Dtau, Props, nu, SwitchingThreshold, DoDisc, DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, nCompartments)
+        Dtau, correctInteger, DoDisc, DoCont, discCompartment, contCompartment, NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment, NewDiscCompartmemt = UpdateCompartmentRegime(dt, Xprev, Dtau, Props, nu, SwitchingThreshold, DoDisc, DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, nCompartments,nRates)
 
         # Perform the Forward Euler Step
         dXdt = ComputedXdt(Xprev, Props, nu, contCompartment, nCompartments)
         
-        Xcurr = X[:, iters] + Dtau * (dXdt * DoCont).flatten()
+        # Xcurr = X[:, iters] + Dtau * (dXdt * DoCont).flatten()
+        Xcurr = X[:, iters] + Dtau * (dXdt * DoCont)
 
         # Update the discrete compartments, if a state has just become discrete
         OriginalDoCont = DoCont.copy()
@@ -77,13 +79,18 @@ def JumpSwithFlowSimulator(x0, rates, stoich, times, options):
             DoCont = NewDoCont.copy()
             DoDisc = NewDoDisc.copy()
 
-        TimePassed = 0
+        
         # Perform the Stochastic Loop
         stayWhile = (True) * (np.count_nonzero(DoCont) != nCompartments)
         AbsT = ContT
+        DtauContStep = Dtau
+        TimePassed = 0
+        
         while stayWhile:
             
-            Props = rates(Xprev, AbsT)
+            if TimePassed > 0:
+                Props = rates(Xprev, AbsT)
+
             integralStep = ComputeIntegralOfFiringTimes(Dtau, Props, rates, Xprev, Xcurr, AbsT)
             integralOfFiringTimes = integralOfFiringTimes + integralStep
 
@@ -104,33 +111,37 @@ def JumpSwithFlowSimulator(x0, rates, stoich, times, options):
                 # Identify which reactions have fired
                 tauArray = ComputeFiringTimes(firedReactions,integralOfFiringTimes,randTimes,Props,dt,nRates,integralStep)
                 
-                if np.sum(tauArray) > 0:
+                if np.count_nonzero(tauArray) > 0:
                     
                     # Update the discrete compartments
-                    Xcurr, Xprev, integralOfFiringTimes, integralStep, randTimes, TimePassed, AbsT = ImplementFiredReaction(tauArray ,integralOfFiringTimes,randTimes,Props,rates,integralStep,TimePassed, AbsT, X, iters, nu, dXdt, OriginalDoCont)
+                    Xcurr, Xprev, integralOfFiringTimes, integralStep, randTimes, TimePassed, AbsT, DtauMin = ImplementFiredReaction(tauArray ,integralOfFiringTimes,randTimes,Props,rates,integralStep,TimePassed, AbsT, X, iters, nu, dXdt, OriginalDoCont)
 
                     iters = iters + 1
                     X[:, iters] = Xcurr
                     TauArr[iters] = AbsT
 
-                    stayWhile = False
+                    Dtau = Dtau - DtauMin
 
                 else:
                     stayWhile = False
             else:
                 stayWhile = False
 
-            if TimePassed > Dtau:
+            if TimePassed >= DtauContStep:
                 stayWhile = False
         
-        indicator = 0 if TimePassed > 0 else 1
-        ContT = ContT + Dtau*indicator + TimePassed
-        
-        
+        # indicator = 0 if TimePassed > 0 else 1
+        # ContT = ContT + Dtau*indicator + TimePassed
+        # iters = iters + 1
+        # X[:, iters] = Xcurr
+        # TauArr[iters] = ContT
+
         iters = iters + 1
-        X[:, iters] = Xcurr
+        ContT = ContT + DtauContStep
         TauArr[iters] = ContT
-            
+        # X[:,iters] = X[:,iters-1] + (DtauContStep-TimePassed)*(dXdt * DoCont).flatten()
+        X[:,iters] = X[:,iters-1] + (DtauContStep-TimePassed)*(dXdt * DoCont)
+
         if correctInteger == 1:
             pos = np.argmax(NewDiscCompartmemt)
             X[pos, iters] = round(X[pos, iters])
@@ -148,7 +159,7 @@ def JumpSwithFlowSimulator(x0, rates, stoich, times, options):
     return trimmed_X, trimmed_TauArr
 
 def ComputeFiringTimes(firedReactions,integralOfFiringTimes,randTimes,Props,dt,nRates,integralStep):
-    tauArray = np.zeros(nRates)
+    tauArray = np.zeros(nRates, dtype=float)
     for kk in range(nRates):
         if firedReactions[kk]:
              # calculate time tau until event using linearisation of integral:
@@ -179,7 +190,8 @@ def ImplementFiredReaction(tauArray ,integralOfFiringTimes,randTimes,Props,rates
     AbsT = AbsT + DtauMin
 
     # implement first reaction
-    Xcurr = X[:, iters] + nu[pos, :] + DtauMin*(dXdt * OriginalDoCont).flatten()
+    # Xcurr = X[:, iters] + nu[pos, :] + DtauMin*(dXdt * OriginalDoCont).flatten()
+    Xcurr = X[:, iters] + nu[pos, :] + DtauMin*(dXdt * OriginalDoCont)
     Xprev = X[:, iters]
 
     # update the integralOfFiringTimes and randTimes up to time step DtauMin
@@ -191,21 +203,22 @@ def ImplementFiredReaction(tauArray ,integralOfFiringTimes,randTimes,Props,rates
     integralOfFiringTimes[pos] = 0.0
     randTimes[pos] = np.random.rand()
 
-    return Xcurr, Xprev, integralOfFiringTimes, integralStep, randTimes, TimePassed, AbsT
+    return Xcurr, Xprev, integralOfFiringTimes, integralStep, randTimes, TimePassed, AbsT, DtauMin
 
 def ComputeIntegralOfFiringTimes(Dtau, Props, rates, Xprev, Xcurr, AbsT):
-    Props = rates(Xprev, AbsT)
+    # Props = rates(Xprev, AbsT)
     # Integrate the cumulative wait times using trapezoid method
     integralStep = Dtau*0.5*(Props + rates(Xcurr, AbsT+Dtau))
     return integralStep
 
 def ComputedXdt(Xprev, Props, nu, contCompartment, nCompartments):
-    dXdt = np.sum(Props * (contCompartment * nu), axis=0).reshape(nCompartments, 1)
+    # dXdt = np.sum(Props * (contCompartment * nu), axis=0).reshape(nCompartments, 1)
+    dXdt = np.dot(Props.T, contCompartment * nu).flatten()
     return dXdt
 
-def UpdateCompartmentRegime(dt, Xprev, Dtau, Props, nu, SwitchingThreshold, DoDisc, DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, nCompartments):
+def UpdateCompartmentRegime(dt, Xprev, Dtau, Props, nu, SwitchingThreshold, DoDisc, DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, nCompartments,nRates):
     # check if any states change in this step
-    NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment = IsDiscrete(Xprev, SwitchingThreshold, DoDisc, DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, nCompartments)
+    NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment = IsDiscrete(Xprev, SwitchingThreshold, DoDisc, DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, nCompartments,nRates)
     correctInteger = 0
     NewDiscCompartmemt = np.zeros(nCompartments, dtype=int)
     # identify if a state has just become discrete
@@ -215,7 +228,10 @@ def UpdateCompartmentRegime(dt, Xprev, Dtau, Props, nu, SwitchingThreshold, DoDi
         pos = pos_ind[0][0]
 
         # Here, we identify the time to the next integer
-        dXdt = np.sum(Props * (contCompartment * nu), axis=0).T
+        # dXdt = np.dot(Props.T, contCompartment * nu).flatten()
+        dXdt = np.dot(Props.T, contCompartment * nu).flatten()
+
+
         Dtau = np.min([dt,abs((round(Xprev[pos]) - Xprev[pos]) / dXdt[pos])])
 
         # If the time to the next integer is less than the time step, we need to move the mesh
@@ -230,10 +246,12 @@ def UpdateCompartmentRegime(dt, Xprev, Dtau, Props, nu, SwitchingThreshold, DoDi
 
     return Dtau, correctInteger, DoDisc, DoCont, discCompartment, contCompartment, NewDoDisc, NewDoCont, NewdiscCompartment, NewcontCompartment, NewDiscCompartmemt
 
-def IsDiscrete(X, SwitchingThreshold, DoDisc, DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, nCompartments): 
+def IsDiscrete(X, SwitchingThreshold, DoDisc, DoCont, EnforceDo, discCompartment, contCompartment, compartInNu, nCompartments, nRates): 
     # Check if any compartments should be switched to continuous
-    DoDiscTmp = (X.reshape(DoDisc.shape) < SwitchingThreshold[1]).astype(int)
-    DoContTmp = DoDiscTmp^1
+    DoDiscTmp = (X  < SwitchingThreshold).astype(int)
+    # DoContTmp = DoDiscTmp^1
+    DoContTmp = (np.ones([nCompartments], dtype=int) - DoDiscTmp)
+
 
     # Set values for DoContTmp and DoDiscTmp using original values
     for idx, x in enumerate(EnforceDo):
@@ -242,23 +260,24 @@ def IsDiscrete(X, SwitchingThreshold, DoDisc, DoCont, EnforceDo, discCompartment
             DoContTmp[idx] = DoCont[idx]            
 
     # Check if the new DoDiscTmp and DoContTmp are the same as the old ones
-    are_equal = DoDiscTmp == DoDisc
+    are_equal = (DoDiscTmp == DoDisc)
     if (np.count_nonzero(are_equal) == nCompartments):
         discCompartmentTmp = discCompartment.copy()
         contCompartmentTmp = contCompartment.copy()
     else:
         # If not, update the compartments
-        discCompartmentTmp = np.zeros(discCompartment.shape, dtype=int)
+        discCompartmentTmp = np.zeros([nRates,1], dtype=int)
 
-        for idx, x in enumerate(X):
-            for compartIdx in range(compartInNu.shape[0]):
+        for idx in range(nCompartments):
+            for compartIdx in range(nRates):
                 if  EnforceDo[idx]==0:
                     if DoDiscTmp[idx]==1 and compartInNu[compartIdx, idx]==1:
                         discCompartmentTmp[compartIdx] = 1
                 else:
                     if DoDisc[idx]==1 and compartInNu[compartIdx, idx]==1:
                         discCompartmentTmp[compartIdx] = 1
-        # contCompartmentTmp = np.ones(contCompartment.shape) - discCompartmentTmp
-        contCompartmentTmp = discCompartmentTmp^1
+        # contCompartmentTmp = discCompartmentTmp^1
+        contCompartmentTmp = np.ones([nRates,1], dtype=int) - discCompartmentTmp
+
 
     return DoDiscTmp, DoContTmp, discCompartmentTmp, contCompartmentTmp
