@@ -69,6 +69,23 @@ nuProduct = np.array([[0, 2, 0],
 nu = nuProduct - nuReactant
 
 # propensity function
+def rates_optimized(X, t):
+    """
+    This is the rate function for the SIR model with demography
+    """
+    s = X[0]
+    i = X[1]
+    r = X[2]
+    return [mBeta*(s*i)/(s+i+r),
+                     mGamma*i,
+                     mBirth*s,
+                     mBirth*i,
+                     mBirth*r,
+                     mDeath*s,
+                     mDeath*i,
+                     mDeath*r,
+                     mWane*r]
+
 def rates(X, t):
     return np.array([[mBeta*(X[0]*X[1])/(X[0]+X[1]+X[2]),
                      mGamma*X[1],
@@ -79,7 +96,7 @@ def rates(X, t):
                      mDeath*X[1],
                      mDeath*X[2],
                      mWane*X[2]]]).T
-                     
+
 
 
 # identify which reactions are discrete and which are continuous
@@ -94,20 +111,37 @@ stoich = {'nu': nu, 'DoDisc': DoDisc, 'nuReactant': nuReactant, 'nuProduct': nuP
 solTimes = np.arange(0, tFinal+dt, dt)
 myOpts = {'EnforceDo': EnforceDo, 'dt': dt, 'SwitchingThreshold': SwitchingThreshold}
 
+# Do a benchmark of the following expression
+import timeit
 
-# use python profiler to see where the time is spent
-# profiler = cProfile.Profile()
-# profiler.enable()
+bar = timeit.timeit('rates(X0, 0)', number=100000, globals=globals())
+plumbus = timeit.timeit("rates_optimized([99980, 20, 0], 0)", number=100000, globals=globals())
 
-start_time = time.time()
-X, TauArr = JumpSwithFlowSimulator(X0, rates, stoich, solTimes, myOpts)
-end_time = time.time()
-elapsed_time = end_time - start_time
-print("Elapsed time:", elapsed_time, "seconds")
+# >>> timeit.timeit("np.sum(np.arange(10**6))", number=1000, globals=globals())
+# 0.3723146120319143
+# >>> timeit.timeit("sum(range(10**6))", number=1000, globals=globals())
+# 5.511232746008318
 
-# profiler.disable()
-# profiler.print_stats()
 
+with cProfile.Profile() as pr:
+    pr.enable()
+
+    X, TauArr = JumpSwithFlowSimulator(X0, rates, stoich, solTimes, myOpts)
+    X, TauArr = JumpSwithFlowSimulator(X0, rates, stoich, solTimes, myOpts)
+    X, TauArr = JumpSwithFlowSimulator(X0, rates, stoich, solTimes, myOpts)
+
+    pr.disable()
+    pr.print_stats()
+    pr.dump_stats('flamegraph-profile.prof')
+
+# You can make a pretty plot of the time spent in each function with
+# flameprof (https://github.com/baverman/flameprof/) and use the
+# following command:
+#
+# $ flameprof requests.prof > requests.svg
+#
+# This will create a file called requests.svg that you then need to
+# open in a browser.
 
 plt.plot(TauArr, X[0], label='S', marker='.', linestyle='-', color='blue')
 plt.plot(TauArr, X[1], label='I', marker='.', linestyle='-', color='red')
