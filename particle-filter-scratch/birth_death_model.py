@@ -9,7 +9,8 @@ import pdb
 # --------------------------------------------------------------------
 # Define the process models
 #
-# - BirthDeathODE :: ODE
+# - BirthDeathODENotVec :: ODE (not vectorised)
+# - BirthDeathODE :: ODE (vectorised)
 # - BirthDeathSDE :: SDE
 # - BirthDeathCTMC :: CTMC
 #
