@@ -25,11 +25,18 @@ Simulations from the hybrid process are shown in [[fig:hybrid-non-vec][this figu
 #+attr_html: :width 400px
 [[./out/simulation-hybrid-not-vec.png]]
 
-* TODO Inference example
+* Inference example
 
 Run the =run-inference.py= script to simulate some data from the CTMC
 and then attempt to estimate the parameters for the process using the
-hybrid model
+hybrid model. The estimation of the birth rate as additional
+information is used is shown in Figure [[fig:inf-birth-rate]].
+
+#+caption: Inference example based on simulated data
+#+name: fig:inf-birth-rate
+#+attr_org: :width 500px
+#+attr_html: :width 400px
+[[./out/inference-demo-birth-rate.png]]
 
 * Environment
 
