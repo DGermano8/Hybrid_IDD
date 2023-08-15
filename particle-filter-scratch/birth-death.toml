@@ -1,5 +1,6 @@
 [metadata]
 name = "birth-death example"
+description = "Example of a birth-death model"
 filename = "birth-death.toml"
 author = "Alexander E. Zarebski"
 date = "2023-07-31"
@@ -27,6 +28,7 @@ prior.death = { name = "constant", args.value = 1.0 }
 prior.birth = { name = "constant", args.value = 2.0 }
 num_replicates = 100
 file = "simu-1a-birth-death-observations.ssv"
+plot_path = "out/simulation-sde-vec.png"
 
 [scenario.simulation1b]
 simulation_name = "SDE style process (non-vectorised)"
@@ -36,6 +38,7 @@ prior.death = { name = "constant", args.value = 1.0 }
 prior.birth = { name = "constant", args.value = 2.0 }
 num_replicates = 100
 file = "simu-1b-birth-death-observations.ssv"
+plot_path = "out/simulation-sde-not-vec.png"
 
 [scenario.simulation2a]
 simulation_name = "ODE style process (vectorised)"
@@ -45,6 +48,7 @@ prior.death = { name = "constant", args.value = 1.0 }
 prior.birth = { name = "constant", args.value = 2.0 }
 num_replicates = 10
 file = "simu-2a-birth-death-observations.ssv"
+plot_path = "out/simulation-ode-vec.png"
 
 [scenario.simulation2b]
 simulation_name = "ODE style process (non-vectorised)"
@@ -54,6 +58,7 @@ prior.death = { name = "constant", args.value = 1.0 }
 prior.birth = { name = "constant", args.value = 2.0 }
 num_replicates = 10
 file = "simu-2b-birth-death-observations.ssv"
+plot_path = "out/simulation-ode-not-vec.png"
 
 [scenario.simulation3a]
 simulation_name = "CTMC style process (vectorised)"
@@ -63,6 +68,7 @@ prior.death = { name = "constant", args.value = 1.0 }
 prior.birth = { name = "constant", args.value = 2.0 }
 num_replicates = 100
 file = "simu-3a-birth-death-observations.ssv"
+plot_path = "out/simulation-ctmc-vec.png"
 
 [scenario.simulation3b]
 simulation_name = "CTMC style process (non-vectorised)"
@@ -72,6 +78,7 @@ prior.death = { name = "constant", args.value = 1.0 }
 prior.birth = { name = "constant", args.value = 2.0 }
 num_replicates = 100
 file = "simu-3b-birth-death-observations.ssv"
+plot_path = "out/simulation-ctmc-not-vec.png"
 
 [filter]
 particles = 10
@@ -88,8 +95,3 @@ history_window = -1
 # prior.birth = { name = "uniform", args.loc = 1.75, args.scale = 0.5 }
 # backcast_time = 2.0
 # forecast_time = 4.0
-
-# [output]
-# credible_intervals = "demo-ode-bd-cris.ssv"
-# estimate_plot = "ode-bd-posterior-estimates.png"
-# forecast_plot = "ode-bd-posterior-forecasts.png"

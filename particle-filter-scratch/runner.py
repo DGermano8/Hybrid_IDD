@@ -13,6 +13,12 @@ import pdb
 
 
 def run_simulation(instance):
+    """
+    Simulates a model using pypfilt, and returns a DataFrame of results.
+
+    :param instance: A simulation instance containing settings and parameters.
+    :return: A pandas DataFrame containing the simulation results.
+    """
     num_reps = instance.settings['num_replicates']
     my_obs_tables = pypfilt.simulate_from_model(
         instance, particles = num_reps
@@ -24,7 +30,15 @@ def run_simulation(instance):
     )
     return sim_df
 
+
 def simulation_plot(sim_df, name):
+    """
+    Generates a plot using ggplot to visualize the simulation data.
+
+    :param sim_df: A pandas DataFrame containing the simulation results.
+    :param name: The title of the plot.
+    :return: A ggplot object representing the plot.
+    """
     return (ggplot()
             + geom_line(data = sim_df,
                         mapping = aes(x = "time",
@@ -33,17 +47,27 @@ def simulation_plot(sim_df, name):
             + scale_y_sqrt()
             + labs(title = name))
 
+
 def main():
+    """
+    Main function that loads instances from a scenario file, runs
+    simulations, and saves the plots as a PDF.
+
+    :return: None
+    """
     scenario_file = 'birth-death.toml'
     instance_dict = {x.scenario_id: x for x
                      in pypfilt.load_instances(scenario_file)}
     plots = []
     for key, inst in instance_dict.items():
         sim_name = inst.settings['simulation_name']
+        plot_path = inst.settings['plot_path']
         sim_df = run_simulation(inst)
-        plots.append(simulation_plot(sim_df, sim_name))
+        p = simulation_plot(sim_df, sim_name)
+        p.save(plot_path)
+        plots.append(p)
 
-    p9.save_as_pdf_pages(plots, filename = "demo-simulations.pdf")
+    p9.save_as_pdf_pages(plots, filename = "out/demo-simulations.pdf")
 
 
 if __name__ == '__main__':
