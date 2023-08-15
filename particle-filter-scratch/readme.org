@@ -1,0 +1,20 @@
+#+title: Birth-death example using =pypfilt=
+
+Run the =runner.py= script to generate the figures below using both
+vectorised numpy code and a loopy version that is less efficient but
+makes it easier to integrate external simulators.
+
+#+caption: CTMC simulation with vectorisation across particles
+#+name: fig:ctmc-vec
+#+attr_org: :width 500px
+#+attr_html: :width 400px
+[[./out/simulation-ctmc-vec.png]]
+
+#+caption: CTMC simulation with a loop across the particles
+#+name: fig:ctmc-non-vec
+#+attr_org: :width 500px
+#+attr_html: :width 400px
+[[./out/simulation-ctmc-not-vec.png]]
+
+The [[file:./requirements.txt][requirements.txt]] file contains a description of the packages (and
+versions) needed to run this.
