@@ -1,5 +1,3 @@
-
-
 import scipy.stats
 import numpy as np
 from pypfilt.model import Model
@@ -11,8 +9,10 @@ import pdb
 #
 # - BirthDeathODENotVec :: ODE (not vectorised)
 # - BirthDeathODE :: ODE (vectorised)
-# - BirthDeathSDE :: SDE
-# - BirthDeathCTMC :: CTMC
+# - BirthDeathSDENotVec :: SDE (not vectorised)
+# - BirthDeathSDE :: SDE (vectorised)
+# - BirthDeathCTMCNotVec :: CTMC (not vectorised)
+# - BirthDeathCTMC :: CTMC (vectorised)
 #
 # The models that have a "NotVec" suffix are not vectorised, they loop
 # over the particles/replicates to update their state vectors.
@@ -140,7 +140,6 @@ class BirthDeathSDENotVec(Model):
         """
         Initialise the state vectors based on the prior distribution.
         """
-        print("Hello from BirthDeathSDENotVec")
         prior = ctx.data['prior']
         for p_ix in range(ctx.settings['num_replicates']):
             vec['x'][p_ix] = prior['x'][p_ix]
@@ -158,6 +157,63 @@ class BirthDeathSDENotVec(Model):
             diff = (prev['birthRate'][p_ix] - prev['deathRate'][p_ix]) * prev['x'][p_ix] * time_step.dt
             wein = np.sqrt(diff) * rng.normal(size=(1,))
             curr['x'][p_ix] = np.clip(prev['x'][p_ix] + diff + wein, 0, None)
+
+
+class BirthDeathCTMCNotVec(Model):
+
+    def field_types(self, ctx):
+        return [('birthRate', np.dtype(float)),
+                ('deathRate', np.dtype(float)),
+                ('x', np.dtype(int)),
+                ('next_event', np.int_),
+                ('next_time', np.float_)]
+
+    def init(self, ctx, vec):
+        # NOTE that the `next_time` used here tracks the *cumulative*
+        # time for that particular particle rather than the wait time
+        # until the next event.
+        prior = ctx.data['prior']
+        for p_ix in range(ctx.settings['num_replicates']):
+            vec['x'][p_ix] = prior['x'][p_ix]
+            vec['birthRate'][p_ix] = prior['birth'][p_ix]
+            vec['deathRate'][p_ix] = prior['death'][p_ix]
+            vec['next_time'][p_ix] = 0
+            vec['next_event'][p_ix] = 0
+            self.select_next_event(ctx, vec[p_ix], stop_time=0)
+
+    def update(self, ctx, time_step, is_forecast, prev, curr):
+        for p_ix in range(ctx.settings['num_replicates']):
+            curr_ptcl = prev[p_ix]
+            # Since the wait times between events is stochastic we
+            # need to keep looping until the next event time goes
+            # beyond the end of the current time step.
+            while ((curr_ptcl['next_time'] <= time_step.end) and
+                   (curr_ptcl['x'] > 0)):
+                if curr_ptcl['next_event'] == 0:
+                    curr_ptcl['x'] -= 1
+                elif curr_ptcl['next_event'] == 1:
+                    curr_ptcl['x'] += 1
+                else:
+                    raise ValueError('Invalid event')
+                self.select_next_event(ctx, curr_ptcl,
+                                       stop_time=time_step.end)
+            curr[p_ix] = curr_ptcl
+
+    def select_next_event(self, ctx, ptcl, stop_time):
+        # NOTE since the particle is a mutable object it should be
+        # passed by reference rather than value which means we just
+        # need to update it rather than return a modified copy.
+        if ptcl['x'] <= 0:
+            return
+
+        rng = ctx.component['random']['model']
+
+        ind_rate = ptcl['birthRate'] + ptcl['deathRate']
+        dt = - np.log(rng.random((1,))) / (ind_rate * ptcl['x'])
+        ptcl['next_time'] += dt
+
+        is_birth = (rng.random((1,)) * ind_rate) < ptcl['birthRate']
+        ptcl['next_event'] = is_birth.astype(np.int_)
 
 
 class BirthDeathCTMC(Model):

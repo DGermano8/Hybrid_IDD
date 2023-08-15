@@ -55,14 +55,23 @@ prior.birth = { name = "constant", args.value = 2.0 }
 num_replicates = 10
 file = "simu-2b-birth-death-observations.ssv"
 
-[scenario.simulation3]
-simulation_name = "CTMC style process"
+[scenario.simulation3a]
+simulation_name = "CTMC style process (vectorised)"
 components.model = "birth_death_model.BirthDeathCTMC"
 prior.x = { name = "constant", args.value = 2.0 }
 prior.death = { name = "constant", args.value = 1.0 }
 prior.birth = { name = "constant", args.value = 2.0 }
 num_replicates = 100
-file = "simu-3-birth-death-observations.ssv"
+file = "simu-3a-birth-death-observations.ssv"
+
+[scenario.simulation3b]
+simulation_name = "CTMC style process (non-vectorised)"
+components.model = "birth_death_model.BirthDeathCTMCNotVec"
+prior.x = { name = "constant", args.value = 2.0 }
+prior.death = { name = "constant", args.value = 1.0 }
+prior.birth = { name = "constant", args.value = 2.0 }
+num_replicates = 100
+file = "simu-3b-birth-death-observations.ssv"
 
 [filter]
 particles = 10
