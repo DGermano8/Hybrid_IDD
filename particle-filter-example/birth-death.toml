@@ -80,6 +80,16 @@ num_replicates = 100
 file = "simu-3b-birth-death-observations.ssv"
 plot_path = "out/simulation-ctmc-not-vec.png"
 
+[scenario.simulation4]
+simulation_name = "Hybrid style process (non-vectorised)"
+components.model = "birth_death_model.BirthDeathHybrid"
+prior.x = { name = "constant", args.value = 2.0 }
+prior.death = { name = "constant", args.value = 1.0 }
+prior.birth = { name = "constant", args.value = 2.0 }
+num_replicates = 100
+file = "simu-4-birth-death-observations.ssv"
+plot_path = "out/simulation-hybrid-not-vec.png"
+
 [filter]
 particles = 10
 prng_seed = 1

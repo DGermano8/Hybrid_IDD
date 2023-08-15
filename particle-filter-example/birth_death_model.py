@@ -13,6 +13,7 @@ import pdb
 # - BirthDeathSDE :: SDE (vectorised)
 # - BirthDeathCTMCNotVec :: CTMC (not vectorised)
 # - BirthDeathCTMC :: CTMC (vectorised)
+# - BirthDeathHybrid :: JSF (not vectorised)
 #
 # The models that have a "NotVec" suffix are not vectorised, they loop
 # over the particles/replicates to update their state vectors.
@@ -270,6 +271,89 @@ class BirthDeathCTMC(Model):
         threshold = rng.random(x.shape) * rate_sum
         death_event = threshold > birth_rate
         vec['next_event'][active] = death_event.astype(np.int_)
+
+
+class BirthDeathHybrid(Model):
+
+    threshold = 1000
+
+    def field_types(self, ctx):
+        return [('birthRate', np.dtype(float)),
+                ('deathRate', np.dtype(float)),
+                ('x', np.dtype(int)),
+                ('next_event', np.int_),
+                ('next_time', np.float_)]
+
+    def init(self, ctx, vec):
+        prior = ctx.data['prior']
+        for p_ix in range(ctx.settings['num_replicates']):
+            vec['x'][p_ix] = prior['x'][p_ix]
+            vec['birthRate'][p_ix] = prior['birth'][p_ix]
+            vec['deathRate'][p_ix] = prior['death'][p_ix]
+            vec['next_time'][p_ix] = 0
+            vec['next_event'][p_ix] = 0
+            self.select_next_event(ctx, vec[p_ix], stop_time=0)
+
+    def update(self, ctx, time_step, is_forecast, prev, curr):
+        # NOTE we are taking a short-cut here assuming that the
+        # process can only go from the discrete to the continuous
+        # regime and not vice versa, which is not true in general and
+        # implicitly assumes that the birth-rate is not less than the
+        # death-rate.
+        for p_ix in range(ctx.settings['num_replicates']):
+            curr_ptcl = prev[p_ix]
+            while ((curr_ptcl['x'] <= self.threshold) and
+                   (curr_ptcl['next_time'] <= time_step.end) and
+                   (curr_ptcl['x'] > 0)):
+                if curr_ptcl['next_event'] == 0:
+                    curr_ptcl['x'] -= 1
+                elif curr_ptcl['next_event'] == 1:
+                    curr_ptcl['x'] += 1
+                else:
+                    raise ValueError('Invalid event')
+
+                if curr_ptcl['x'] > self.threshold:
+                    self.euler_step(ctx, curr_ptcl, time_step.end)
+                else:
+                    self.select_next_event(ctx, curr_ptcl, time_step.end)
+
+
+            if ((curr_ptcl['x'] > self.threshold) and
+                (curr_ptcl['next_time'] <= time_step.end)):
+                self.euler_step(ctx, curr_ptcl, time_step.end)
+
+            curr[p_ix] = curr_ptcl
+
+    def select_next_event(self, ctx, ptcl, stop_time):
+        """
+        Select the next event for a particle along with the time of
+        the event.
+        """
+        if ptcl['x'] <= 0:
+            return
+
+        rng = ctx.component['random']['model']
+
+        ind_rate = ptcl['birthRate'] + ptcl['deathRate']
+        dt = - np.log(rng.random((1,))) / (ind_rate * ptcl['x'])
+        ptcl['next_time'] += dt
+
+        is_birth = (rng.random((1,)) * ind_rate) < ptcl['birthRate']
+        ptcl['next_event'] = is_birth.astype(np.int_)
+
+    def euler_step(self, ctx, ptcl, stop_time):
+        """
+        Perform an Euler step up until the stop time.
+        """
+        if ptcl['x'] <= 0:
+            return
+
+        remaining_time = stop_time - ptcl['next_time']
+        assert remaining_time >= 0
+
+        deriv = (ptcl['birthRate'] - ptcl['deathRate']) * ptcl['x']
+        ptcl['x'] += remaining_time * deriv
+        ptcl['next_time'] += remaining_time
 
 
 # --------------------------------------------------------------------
