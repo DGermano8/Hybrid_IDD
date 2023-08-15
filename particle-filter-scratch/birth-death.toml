@@ -19,14 +19,23 @@ summaries_per_unit = 2
 # model = "birth_death_model.NoisyStateObservation"
 model = "birth_death_model.UniformObservation"
 
-[scenario.simulation1]
-simulation_name = "SDE style process"
+[scenario.simulation1a]
+simulation_name = "SDE style process (vectorised)"
 components.model = "birth_death_model.BirthDeathSDE"
 prior.x = { name = "constant", args.value = 2.0 }
 prior.death = { name = "constant", args.value = 1.0 }
 prior.birth = { name = "constant", args.value = 2.0 }
 num_replicates = 100
-file = "simu-1-birth-death-observations.ssv"
+file = "simu-1a-birth-death-observations.ssv"
+
+[scenario.simulation1b]
+simulation_name = "SDE style process (non-vectorised)"
+components.model = "birth_death_model.BirthDeathSDENotVec"
+prior.x = { name = "constant", args.value = 2.0 }
+prior.death = { name = "constant", args.value = 1.0 }
+prior.birth = { name = "constant", args.value = 2.0 }
+num_replicates = 100
+file = "simu-1b-birth-death-observations.ssv"
 
 [scenario.simulation2a]
 simulation_name = "ODE style process (vectorised)"

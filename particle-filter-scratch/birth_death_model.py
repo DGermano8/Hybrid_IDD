@@ -14,6 +14,8 @@ import pdb
 # - BirthDeathSDE :: SDE
 # - BirthDeathCTMC :: CTMC
 #
+# The models that have a "NotVec" suffix are not vectorised, they loop
+# over the particles/replicates to update their state vectors.
 # --------------------------------------------------------------------
 
 class BirthDeathODENotVec(Model):
@@ -44,7 +46,7 @@ class BirthDeathODENotVec(Model):
 
     def update(self, ctx, time_step, is_forecast, prev, curr):
         """
-        Update the state vectors.
+        (Destructively) update the state vector `curr`.
         """
         deriv = np.zeros(curr['birthRate'].shape)
         for p_ix in range(ctx.settings['num_replicates']):
@@ -120,6 +122,42 @@ class BirthDeathSDE(Model):
         diff = (prev['birthRate'] - prev['deathRate']) * prev['x'] * time_step.dt
         wein = np.sqrt(diff) * rng.normal(size=prev['x'].shape)
         curr['x'] = np.clip(prev['x'] + diff + wein, 0, None)
+
+
+class BirthDeathSDENotVec(Model):
+    def field_types(self, ctx):
+        """
+        Define the state that is used to completely specify a
+        particle.
+        """
+        return [
+            ('x', np.float_),
+            ('birthRate', np.float_),
+            ('deathRate', np.float_),
+        ]
+
+    def init(self, ctx, vec):
+        """
+        Initialise the state vectors based on the prior distribution.
+        """
+        print("Hello from BirthDeathSDENotVec")
+        prior = ctx.data['prior']
+        for p_ix in range(ctx.settings['num_replicates']):
+            vec['x'][p_ix] = prior['x'][p_ix]
+            vec['birthRate'][p_ix] = prior['birth'][p_ix]
+            vec['deathRate'][p_ix] = prior['death'][p_ix]
+
+    def update(self, ctx, time_step, is_forecast, prev, curr):
+        """
+        (Destructively) update the state vector `curr`.
+        """
+        rng = ctx.component['random']['model']
+        for p_ix in range(ctx.settings['num_replicates']):
+            curr['birthRate'][p_ix] = prev['birthRate'][p_ix]
+            curr['deathRate'][p_ix] = prev['deathRate'][p_ix]
+            diff = (prev['birthRate'][p_ix] - prev['deathRate'][p_ix]) * prev['x'][p_ix] * time_step.dt
+            wein = np.sqrt(diff) * rng.normal(size=(1,))
+            curr['x'][p_ix] = np.clip(prev['x'][p_ix] + diff + wein, 0, None)
 
 
 class BirthDeathCTMC(Model):
