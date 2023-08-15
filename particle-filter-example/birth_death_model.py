@@ -275,7 +275,7 @@ class BirthDeathCTMC(Model):
 
 class BirthDeathHybrid(Model):
 
-    threshold = 1000
+    threshold = 100
 
     def field_types(self, ctx):
         return [('birthRate', np.dtype(float)),
@@ -301,7 +301,8 @@ class BirthDeathHybrid(Model):
         # regime and not vice versa, which is not true in general and
         # implicitly assumes that the birth-rate is not less than the
         # death-rate.
-        for p_ix in range(ctx.settings['num_replicates']):
+        num_particles = prev['x'].shape[0]
+        for p_ix in range(num_particles):
             curr_ptcl = prev[p_ix]
             while ((curr_ptcl['x'] <= self.threshold) and
                    (curr_ptcl['next_time'] <= time_step.end) and

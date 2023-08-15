@@ -1,0 +1,47 @@
+[metadata]
+name = "birth-death inference example"
+description = "Example of a birth-death inference"
+filename = "birth-death-inference.toml"
+author = "Alexander E. Zarebski"
+date = "2023-08-15"
+
+[components]
+time = "pypfilt.Scalar"
+sampler = "pypfilt.sampler.LatinHypercube"
+summary = "pypfilt.summary.HDF5"
+
+[time]
+start = 0.0
+until = 6.0
+steps_per_unit = 10
+summaries_per_unit = 2
+
+[observations.x]
+model = "birth_death_model.NoisyStateObservation"
+# model = "birth_death_model.UniformObservation"
+file = "simuluation-birth-death-observations.ssv"
+
+[scenario.simulation]
+components.model = "birth_death_model.BirthDeathCTMC"
+prior.x = { name = "constant", args.value = 5.0 }
+prior.death = { name = "constant", args.value = 1.0 }
+prior.birth = { name = "constant", args.value = 2.0 }
+
+[scenario.inference]
+data_file = "simuluation-birth-death-observations.ssv"
+summary.tables.model_cints.component = "pypfilt.summary.ModelCIs"
+summary.tables.model_cints.credible_intervals = [ 0, 50, 95 ]
+summary.tables.forecasts.component = "pypfilt.summary.PredictiveCIs"
+summary.tables.forecasts.credible_intervals = [10, 20, 40, 80]
+components.model = "birth_death_model.BirthDeathHybrid"
+prior.x = { name = "constant", args.value = 5.0 }
+prior.death = { name = "constant", args.value = 1.0 }
+prior.birth = { name = "uniform", args.loc = 1.0, args.scale = 2.0 }
+forecast_time = 5.9
+
+[filter]
+particles = 500
+prng_seed = 1
+history_window = -1
+resample.threshold = 0.25
+regularisation.enabled = true
