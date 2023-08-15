@@ -286,7 +286,8 @@ class BirthDeathHybrid(Model):
 
     def init(self, ctx, vec):
         prior = ctx.data['prior']
-        for p_ix in range(ctx.settings['num_replicates']):
+        num_particles = prior['x'].shape[0]
+        for p_ix in range(num_particles):
             vec['x'][p_ix] = prior['x'][p_ix]
             vec['birthRate'][p_ix] = prior['birth'][p_ix]
             vec['deathRate'][p_ix] = prior['death'][p_ix]
