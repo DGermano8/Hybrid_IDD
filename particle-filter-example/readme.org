@@ -2,10 +2,10 @@
 
 * Simulations
 
-Run the =runner.py= script to generate the figures below using both
-vectorised numpy code and a loopy version that is less efficient but
-makes it easier to integrate external simulators. Simulations from the
-hybrid process are shown in [[fig:hybrid-non-vec][this figure]].
+Run the =run-simulations.py= script to generate the figures below
+using both vectorised numpy code and a loopy version that is less
+efficient but makes it easier to integrate external simulators.
+Simulations from the hybrid process are shown in [[fig:hybrid-non-vec][this figure]].
 
 #+caption: CTMC simulation with vectorisation across particles
 #+name: fig:ctmc-vec
@@ -24,6 +24,12 @@ hybrid process are shown in [[fig:hybrid-non-vec][this figure]].
 #+attr_org: :width 500px
 #+attr_html: :width 400px
 [[./out/simulation-hybrid-not-vec.png]]
+
+* TODO Inference example
+
+Run the =run-inference.py= script to simulate some data from the CTMC
+and then attempt to estimate the parameters for the process using the
+hybrid model
 
 * Environment
 

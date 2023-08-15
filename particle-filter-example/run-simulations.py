@@ -55,7 +55,7 @@ def main():
 
     :return: None
     """
-    scenario_file = 'birth-death.toml'
+    scenario_file = 'birth-death-simulation.toml'
     instance_dict = {x.scenario_id: x for x
                      in pypfilt.load_instances(scenario_file)}
     plots = []

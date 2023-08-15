@@ -1,7 +1,7 @@
 [metadata]
-name = "birth-death example"
-description = "Example of a birth-death model"
-filename = "birth-death.toml"
+name = "birth-death simulation example"
+description = "Example of a birth-death model simulation"
+filename = "birth-death-simulation.toml"
 author = "Alexander E. Zarebski"
 date = "2023-07-31"
 
