@@ -14,6 +14,7 @@ import pdb
 # - BirthDeathCTMCNotVec :: CTMC (not vectorised)
 # - BirthDeathCTMC :: CTMC (vectorised)
 # - BirthDeathHybrid :: JSF (not vectorised)
+# - BirthDeathHybridClock :: JSF (not vectorised)
 #
 # The models that have a "NotVec" suffix are not vectorised, they loop
 # over the particles/replicates to update their state vectors.
@@ -323,6 +324,93 @@ class BirthDeathHybrid(Model):
             if ((curr_ptcl['x'] > self.threshold) and
                 (curr_ptcl['next_time'] <= time_step.end)):
                 self.euler_step(ctx, curr_ptcl, time_step.end)
+
+            curr[p_ix] = curr_ptcl
+
+    def select_next_event(self, ctx, ptcl, stop_time):
+        """
+        Select the next event for a particle along with the time of
+        the event.
+        """
+        if ptcl['x'] <= 0:
+            return
+
+        rng = ctx.component['random']['model']
+
+        ind_rate = ptcl['birthRate'] + ptcl['deathRate']
+        dt = - np.log(rng.random((1,))) / (ind_rate * ptcl['x'])
+        ptcl['next_time'] += dt
+
+        is_birth = (rng.random((1,)) * ind_rate) < ptcl['birthRate']
+        ptcl['next_event'] = is_birth.astype(np.int_)
+
+    def euler_step(self, ctx, ptcl, stop_time):
+        """
+        Perform an Euler step up until the stop time.
+        """
+        if ptcl['x'] <= 0:
+            return
+
+        remaining_time = stop_time - ptcl['next_time']
+        assert remaining_time >= 0
+
+        deriv = (ptcl['birthRate'] - ptcl['deathRate']) * ptcl['x']
+        ptcl['x'] += remaining_time * deriv
+        ptcl['next_time'] += remaining_time
+
+
+class BirthDeathHybridClock(Model):
+    """
+    This is similar to the BirthDeathHybrid class, but makes use of
+    the formulation as differential equations with events (a.k.a.,
+    event clocks) so is closer to a general solution.
+    """
+
+    threshold = 100
+
+    def field_types(self, ctx):
+        return [('birthRate', np.dtype(float)),
+                ('deathRate', np.dtype(float)),
+                ('x', np.dtype(int)),
+                ('jump_clock', np.float_),
+                ('switch_clock', np.float_)]
+
+    def init(self, ctx, vec):
+        prior = ctx.data['prior']
+        num_particles = prior['x'].shape[0]
+        for p_ix in range(num_particles):
+            vec['x'][p_ix] = prior['x'][p_ix]
+            vec['birthRate'][p_ix] = prior['birth'][p_ix]
+            vec['deathRate'][p_ix] = prior['death'][p_ix]
+            vec['jump_clock'][p_ix] = 0
+            vec['switch_clock'][p_ix] = 0
+            self.set_clocks(ctx, vec[p_ix], stop_time=0)
+
+    def update(self, ctx, time_step, is_forecast, prev, curr):
+        # NOTE we are taking a short-cut here assuming that the
+        # process can only go from the discrete to the continuous
+        # regime and not vice versa, which is not true in general and
+        # implicitly assumes that the birth-rate is not less than the
+        # death-rate.
+        num_particles = prev['x'].shape[0]
+        for p_ix in range(num_particles):
+            curr_ptcl = prev[p_ix]
+            while ((curr_ptcl['jump_clock'] > 0) and
+                   (curr_ptcl['switch_clock'] > 0) and
+                   (curr_ptcl['x'] > 0)):
+                # Carry out provisional Euler step (which we may need
+                # to reverse if a clock goes off.)
+
+                # If none of the clocks have gone off, then this
+                # time-iteration can be finished by enacting the Euler
+                # step.
+
+                # If one of the clocks has gone off, then we need to
+                #  - go back to the time it went off,
+                #  - apply the action of the relevant clock (across
+                #    the whole state vector),
+                #  - reset the clocks (by sampling random times),
+                #  - and continue the loop (until end of step).
 
             curr[p_ix] = curr_ptcl
 
