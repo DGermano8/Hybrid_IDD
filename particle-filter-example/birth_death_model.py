@@ -164,9 +164,9 @@ class BirthDeathSDENotVec(Model):
 class BirthDeathCTMCNotVec(Model):
 
     def field_types(self, ctx):
-        return [('birthRate', np.dtype(float)),
-                ('deathRate', np.dtype(float)),
-                ('x', np.dtype(int)),
+        return [('birthRate', np.float_),
+                ('deathRate', np.float_),
+                ('x', np.int_),
                 ('next_event', np.int_),
                 ('next_time', np.float_)]
 
@@ -220,9 +220,9 @@ class BirthDeathCTMCNotVec(Model):
 
 class BirthDeathCTMC(Model):
     def field_types(self, ctx):
-        return [('birthRate', np.dtype(float)),
-                ('deathRate', np.dtype(float)),
-                ('x', np.dtype(int)),
+        return [('birthRate', np.float_),
+                ('deathRate', np.float_),
+                ('x', np.int_),
                 ('next_event', np.int_),
                 ('next_time', np.float_)]
 
@@ -279,9 +279,9 @@ class BirthDeathHybrid(Model):
     threshold = 100
 
     def field_types(self, ctx):
-        return [('birthRate', np.dtype(float)),
-                ('deathRate', np.dtype(float)),
-                ('x', np.dtype(int)),
+        return [('birthRate', np.float_),
+                ('deathRate', np.float_),
+                ('x', np.float_),
                 ('next_event', np.int_),
                 ('next_time', np.float_)]
 
@@ -322,7 +322,7 @@ class BirthDeathHybrid(Model):
 
 
             if ((curr_ptcl['x'] > self.threshold) and
-                (curr_ptcl['next_time'] <= time_step.end)):
+                (curr_ptcl['next_time'] < time_step.end)):
                 self.euler_step(ctx, curr_ptcl, time_step.end)
 
             curr[p_ix] = curr_ptcl
@@ -371,7 +371,7 @@ class BirthDeathHybridClock(Model):
     def field_types(self, ctx):
         return [('birthRate', np.dtype(float)),
                 ('deathRate', np.dtype(float)),
-                ('x', np.dtype(int)),
+                ('x', np.float_),
                 ('jump_clock', np.float_),
                 ('switch_clock', np.float_)]
 
