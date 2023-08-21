@@ -74,19 +74,17 @@ def main():
     obs_tables = pypfilt.simulate_from_model(sim_inst)
     pypfilt.io.write_table(obs_ssv, obs_tables['x'], time_scale)
 
-    # Carry out the inference using the hybrid model with the
-    # inference instance.
-    inf_inst = instances[1]
-    fcst_time = inf_inst.settings['forecast_time']
-    ctx = inf_inst.build_context()
-    results = pypfilt.forecast(ctx, [fcst_time],
-                               filename="foobar.txt")
+    # Carry out the inference using the inference instances and
+    # generate plots to summarise the results.
+    for inf_inst in instances[1:]:
+        output_id = inf_inst.settings['output_id']
+        fcst_time = inf_inst.settings['forecast_time']
+        ctx = inf_inst.build_context()
+        results = pypfilt.forecast(ctx, [fcst_time], filename=None)
 
-    # Summarise the results into a nice dataframe and make a nice plot
-    # to visualise the convergence as additional data is used.
-    posterior = posterior_dataframes(results)
-    birth_rate_p9 = birth_rate_plot(posterior['birth_rate_df'])
-    birth_rate_p9.save("out/inference-demo-birth-rate.png")
+        posterior = posterior_dataframes(results)
+        birth_rate_p9 = birth_rate_plot(posterior['birth_rate_df'])
+        birth_rate_p9.save(f"out/{output_id}-demo-birth-rate.png")
 
 
 if __name__ == '__main__':
