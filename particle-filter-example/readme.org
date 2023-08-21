@@ -36,7 +36,21 @@ information is used is shown in Figure [[fig:inf-birth-rate]].
 #+name: fig:inf-birth-rate
 #+attr_org: :width 500px
 #+attr_html: :width 400px
-[[./out/inference-demo-birth-rate.png]]
+[[./out/inference-not-clocked-demo-birth-rate.png]]
+
+There are two classes implementing inference with the hybrid model.
+The first, which generated the plot above, assumes that we can sample
+exactly from the times at which the events occur. The second, which we
+refer to as the /clocked/ implementation uses the formulation of the
+process as a sequence of IVPs with random event times. The resulting
+posterior estimates for the birth rate with this model are shown in
+Figure [[fig:inf-birth-rate-clocked]].
+
+#+caption: Inference example based on simulated data with clocked implementation
+#+name: fig:inf-birth-rate-clocked
+#+attr_org: :width 500px
+#+attr_html: :width 400px
+[[./out/inference-clocked-demo-birth-rate.png]]
 
 * Environment
 
