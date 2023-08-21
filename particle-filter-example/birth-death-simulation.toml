@@ -80,14 +80,28 @@ num_replicates = 100
 file = "simu-3b-birth-death-observations.ssv"
 plot_path = "out/simulation-ctmc-not-vec.png"
 
-[scenario.simulation4]
-simulation_name = "Hybrid style process (non-vectorised)"
+[scenario.simulation4a]
+simulation_name = "Hybrid style process (non-vectorised, not clocked)"
 components.model = "birth_death_model.BirthDeathHybrid"
 prior.x = { name = "constant", args.value = 2.0 }
 prior.death = { name = "constant", args.value = 1.0 }
 prior.birth = { name = "constant", args.value = 2.0 }
-num_replicates = 100
-file = "simu-4-birth-death-observations.ssv"
+num_replicates = 200
+file = "simu-4a-birth-death-observations.ssv"
+plot_path = "out/simulation-hybrid-not-vec-not-clock.png"
+
+[scenario.simulation4b]
+simulation_name = "Hybrid style process (non-vectorised, clocked)"
+components.model = "birth_death_model.BirthDeathHybridClock"
+prior.x = { name = "constant", args.value = 2.0 }
+prior.death = { name = "constant", args.value = 1.0 }
+prior.birth = { name = "constant", args.value = 2.0 }
+num_replicates = 200
+# We increase the number of steps here because the current root
+# finding method employed for the event times is not very accurate
+# with larger steps.
+time.steps_per_unit = 100
+file = "simu-4b-birth-death-observations.ssv"
 plot_path = "out/simulation-hybrid-not-vec.png"
 
 [filter]
