@@ -1,0 +1,57 @@
+[metadata]
+name = "SIS simulation example"
+description = "Example of an SIS model simulation"
+filename = "sis-simulation.toml"
+date = "2023-08-22"
+
+[components]
+time = "pypfilt.Scalar"
+sampler = "pypfilt.sampler.LatinHypercube"
+summary = "pypfilt.summary.HDF5"
+
+[time]
+start = 0.0
+until = 60.0
+steps_per_unit = 10
+summaries_per_unit = 2
+
+[observations.I]
+# model = "birth_death_model.NoisyStateObservation"
+model = "sis_model.UniformObservation"
+
+[scenario.simulation2]
+simulation_name = "ODE style process"
+components.model = "sis_model.SIS_ODE"
+observations.I.model = "sis_model.GaussianStateObservation"
+prior.S = { name = "constant", args.value = 990.0 }
+prior.I = { name = "constant", args.value = 10.0 }
+prior.betaCoef = { name = "constant", args.value = 0.28 }
+prior.gammaCoef = { name = "constant", args.value = 0.14 }
+num_replicates = 10
+file = "out/simu-ode-sis-observations.ssv"
+plot_path = "out/simulation-ode.png"
+
+# [scenario.simulation3]
+# simulation_name = "CTMC style process"
+# components.model = "sis_model.SIS_CTMC"
+# prior.x = { name = "constant", args.value = 2.0 }
+# prior.death = { name = "constant", args.value = 1.0 }
+# prior.birth = { name = "constant", args.value = 2.0 }
+# num_replicates = 100
+# file = "out/simu-ctmc-sis-observations.ssv"
+# plot_path = "out/simulation-ctmc.png"
+
+# [scenario.simulation4]
+# simulation_name = "Hybrid style process"
+# components.model = "sis_model.SIS_Hybrid"
+# prior.x = { name = "constant", args.value = 2.0 }
+# prior.death = { name = "constant", args.value = 1.0 }
+# prior.birth = { name = "constant", args.value = 2.0 }
+# num_replicates = 200
+# file = "out/simu-hybrid-sis-observations.ssv"
+# plot_path = "out/simulation-hybrid.png"
+
+[filter]
+particles = 10
+prng_seed = 1
+history_window = -1

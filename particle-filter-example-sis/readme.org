@@ -1,0 +1,42 @@
+#+title: SIS example using =pypfilt=
+
+* Model
+
+** Stoichiometric
+
+|             | *Reactants* |     | *Products* |     | *Flow* |     |
+|-------------+-------------+-----+------------+-----+--------+-----|
+| *Rate*      |         $S$ | $I$ |        $S$ | $I$ |    $S$ | $I$ |
+|-------------+-------------+-----+------------+-----+--------+-----|
+| $\beta / N$ |           1 |   1 |          0 |   2 |     -1 |   1 |
+| $\gamma$    |           0 |   1 |          1 |   0 |      1 |  -1 |
+
+** Differential equations
+
+\[
+\frac{dS}{dt} = -\beta SI / N + \gamma I
+\]
+
+\[
+\frac{dI}{dt} = \beta SI / N - \gamma I
+\]
+
+* Simulations
+
+* Inference example
+
+* Environment
+
+The [[file:./requirements.txt][requirements.txt]] file contains a description of the packages (and
+versions) needed to run this.
+
+** Setting up the environment
+
+Use the following to set up a virtual environment.
+
+#+begin_src sh
+  python3 -m venv venv
+  source venv/bin/activate
+  pip install -U pip
+  pip install -r requirements.txt
+#+end_src
