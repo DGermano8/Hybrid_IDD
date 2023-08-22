@@ -31,15 +31,17 @@ num_replicates = 10
 file = "out/simu-ode-sis-observations.ssv"
 plot_path = "out/simulation-ode.png"
 
-# [scenario.simulation3]
-# simulation_name = "CTMC style process"
-# components.model = "sis_model.SIS_CTMC"
-# prior.x = { name = "constant", args.value = 2.0 }
-# prior.death = { name = "constant", args.value = 1.0 }
-# prior.birth = { name = "constant", args.value = 2.0 }
-# num_replicates = 100
-# file = "out/simu-ctmc-sis-observations.ssv"
-# plot_path = "out/simulation-ctmc.png"
+[scenario.simulation3]
+simulation_name = "CTMC style process"
+components.model = "sis_model.SIS_CTMC"
+observations.I.model = "sis_model.UniformObservation"
+prior.S = { name = "constant", args.value = 990.0 }
+prior.I = { name = "constant", args.value = 10.0 }
+prior.betaCoef = { name = "constant", args.value = 0.28 }
+prior.gammaCoef = { name = "constant", args.value = 0.14 }
+num_replicates = 100
+file = "out/simu-ctmc-sis-observations.ssv"
+plot_path = "out/simulation-ctmc.png"
 
 # [scenario.simulation4]
 # simulation_name = "Hybrid style process"

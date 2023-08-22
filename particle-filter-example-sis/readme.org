@@ -4,6 +4,9 @@
 
 ** Stoichiometric
 
+Here are the reactant and products as needed by the hybrid model and
+the flows as needed by the CTMC model.
+
 |             | *Reactants* |     | *Products* |     | *Flow* |     |
 |-------------+-------------+-----+------------+-----+--------+-----|
 | *Rate*      |         $S$ | $I$ |        $S$ | $I$ |    $S$ | $I$ |
@@ -13,15 +16,31 @@
 
 ** Differential equations
 
+Here are the differential equations used by the ODE model:
+
 \[
 \frac{dS}{dt} = -\beta SI / N + \gamma I
 \]
+
+and
 
 \[
 \frac{dI}{dt} = \beta SI / N - \gamma I
 \]
 
 * Simulations
+
+#+caption: Simulations with the ODE model
+#+name: fig:sim-ode
+#+attr_org: :width 500px
+#+attr_html: :width 400px
+[[./out/simulation-ode.png]]
+
+#+caption: Simulations with the CTMC model
+#+name: fig:sim-ctmc
+#+attr_org: :width 500px
+#+attr_html: :width 400px
+[[./out/simulation-ctmc.png]]
 
 * Inference example
 
