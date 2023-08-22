@@ -21,7 +21,7 @@ def run_simulation(instance):
     """
     num_reps = instance.settings['num_replicates']
     my_obs_tables = pypfilt.simulate_from_model(instance, particles = num_reps)
-    pdb.set_trace()
+    # pdb.set_trace()
     sim_df = pd.DataFrame(my_obs_tables['I'])
     sim_df['particle'] = np.tile(
         np.arange(num_reps),
@@ -73,6 +73,5 @@ def main():
     p9.save_as_pdf_pages(plots, filename = "out/demo-simulations.pdf")
 
 
-main()
 if __name__ == '__main__':
     main()

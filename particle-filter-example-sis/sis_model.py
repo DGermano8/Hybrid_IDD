@@ -3,6 +3,7 @@ import numpy as np
 from pypfilt.model import Model
 from pypfilt.obs import Univariate, Obs
 import pdb
+import placeholder
 
 # --------------------------------------------------------------------
 # Define the process models
@@ -53,6 +54,7 @@ class SIS_ODE(Model):
 class SIS_CTMC(Model):
     """
     """
+
     def field_types(self, ctx):
         """
         """
@@ -113,6 +115,44 @@ class SIS_CTMC(Model):
 
         is_inf = (rng.random((1,)) * net_event_rate) < inf_rate
         ptcl['next_event'] = is_inf.astype(np.int_)
+
+
+class SIS_Hybrid(Model):
+    """
+    """
+
+    threshold = 50
+
+    def field_types(self, ctx):
+        """
+        """
+        return [('S', np.float_),
+                ('I', np.float_),
+                ('N', np.float_),
+                ('betaCoef', np.float_),
+                ('gammaCoef', np.float_),
+                ('next_event', np.int_),
+                ('next_time', np.float_)]
+
+    def init(self, ctx, vec):
+        """
+        """
+        prior = ctx.data['prior']
+        num_particles = prior['I'].shape[0]
+        for p_ix in range(num_particles):
+            vec['S'][p_ix] = prior['S'][p_ix]
+            vec['I'][p_ix] = prior['I'][p_ix]
+            vec['N'][p_ix] = prior['S'][p_ix] + prior['I'][p_ix]
+            vec['betaCoef'][p_ix] = prior['betaCoef'][p_ix]
+            vec['gammaCoef'][p_ix] = prior['gammaCoef'][p_ix]
+            vec['next_time'][p_ix] = np.nan
+            vec['next_event'][p_ix] = -1
+
+    def update(self, ctx, time_step, is_forecast, prev, curr):
+        num_particles = prev['I'].shape[0]
+        for p_ix in range(num_particles):
+            # pdb.set_trace()
+            curr[p_ix] = placeholder.magic(ctx, time_step, prev[p_ix])
 
 # --------------------------------------------------------------------
 # Define the observation models
