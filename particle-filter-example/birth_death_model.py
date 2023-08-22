@@ -14,6 +14,7 @@ import pdb
 # - BirthDeathCTMCNotVec :: CTMC (not vectorised)
 # - BirthDeathCTMC :: CTMC (vectorised)
 # - BirthDeathHybrid :: JSF (not vectorised)
+# - BirthDeathHybridClock :: JSF (not vectorised)
 #
 # The models that have a "NotVec" suffix are not vectorised, they loop
 # over the particles/replicates to update their state vectors.
@@ -163,9 +164,9 @@ class BirthDeathSDENotVec(Model):
 class BirthDeathCTMCNotVec(Model):
 
     def field_types(self, ctx):
-        return [('birthRate', np.dtype(float)),
-                ('deathRate', np.dtype(float)),
-                ('x', np.dtype(int)),
+        return [('birthRate', np.float_),
+                ('deathRate', np.float_),
+                ('x', np.int_),
                 ('next_event', np.int_),
                 ('next_time', np.float_)]
 
@@ -219,9 +220,9 @@ class BirthDeathCTMCNotVec(Model):
 
 class BirthDeathCTMC(Model):
     def field_types(self, ctx):
-        return [('birthRate', np.dtype(float)),
-                ('deathRate', np.dtype(float)),
-                ('x', np.dtype(int)),
+        return [('birthRate', np.float_),
+                ('deathRate', np.float_),
+                ('x', np.int_),
                 ('next_event', np.int_),
                 ('next_time', np.float_)]
 
@@ -275,12 +276,12 @@ class BirthDeathCTMC(Model):
 
 class BirthDeathHybrid(Model):
 
-    threshold = 100
+    threshold = 50
 
     def field_types(self, ctx):
-        return [('birthRate', np.dtype(float)),
-                ('deathRate', np.dtype(float)),
-                ('x', np.dtype(int)),
+        return [('birthRate', np.float_),
+                ('deathRate', np.float_),
+                ('x', np.float_),
                 ('next_event', np.int_),
                 ('next_time', np.float_)]
 
@@ -321,7 +322,7 @@ class BirthDeathHybrid(Model):
 
 
             if ((curr_ptcl['x'] > self.threshold) and
-                (curr_ptcl['next_time'] <= time_step.end)):
+                (curr_ptcl['next_time'] < time_step.end)):
                 self.euler_step(ctx, curr_ptcl, time_step.end)
 
             curr[p_ix] = curr_ptcl
@@ -351,11 +352,120 @@ class BirthDeathHybrid(Model):
             return
 
         remaining_time = stop_time - ptcl['next_time']
-        assert remaining_time >= 0
+        assert remaining_time > 0
 
         deriv = (ptcl['birthRate'] - ptcl['deathRate']) * ptcl['x']
         ptcl['x'] += remaining_time * deriv
         ptcl['next_time'] += remaining_time
+
+
+class BirthDeathHybridClock(Model):
+    """
+    This is similar to the BirthDeathHybrid class, but makes use of
+    the formulation as differential equations with events (a.k.a.,
+    event clocks) so is closer to a general solution.
+
+    As with the previous hybrid example, this is *not* vectorised,
+    instead it loops over the particles to keep the code simpler.
+    """
+
+    threshold = 50
+
+    def field_types(self, ctx):
+        # The _jump_clock_u variable is used to store the initial
+        # value of the jump clock because this is needed to update the
+        # clock properly.
+        return [('birthRate', np.float_),
+                ('deathRate', np.float_),
+                ('x', np.float_),
+                ('jump_clock', np.float_),
+                ('_jump_clock_u', np.float_),
+                ('jump_clock_type', np.int_),
+                ('ptcl_time', np.float_)]
+
+    def init(self, ctx, vec):
+        prior = ctx.data['prior']
+        num_particles = prior['x'].shape[0]
+        for p_ix in range(num_particles):
+            vec['x'][p_ix] = prior['x'][p_ix]
+            vec['birthRate'][p_ix] = prior['birth'][p_ix]
+            vec['deathRate'][p_ix] = prior['death'][p_ix]
+            vec['jump_clock'][p_ix] = np.infty
+            vec['_jump_clock_u'][p_ix] = -0.0
+            vec['jump_clock_type'][p_ix] = -1
+            vec['ptcl_time'][p_ix] = 0
+            self.reset_clocks(ctx, vec[p_ix])
+
+    def update(self, ctx, time_step, is_forecast, prev, curr):
+        num_particles = prev['x'].shape[0]
+        for p_ix in range(num_particles):
+            # print('Particle %d' % p_ix)
+            curr_ptcl = prev[p_ix].copy()
+            while ((curr_ptcl['ptcl_time'] < time_step.end) and
+                   (curr_ptcl['x'] > 0)):
+                # print('Time %f' % curr_ptcl['ptcl_time'])
+                self.euler_step(ctx, curr_ptcl, time_step.end)
+                if (curr_ptcl['jump_clock'] <= 0):
+                    jump_time = self.jump_clock_root(prev[p_ix], curr_ptcl)
+                    curr_ptcl = prev[p_ix].copy()
+
+                    self.euler_step(ctx, curr_ptcl, jump_time)
+                    # pdb.set_trace()
+                    if curr_ptcl['jump_clock_type'] == 0:
+                        curr_ptcl['x'] -= 1
+                    elif curr_ptcl['jump_clock_type'] == 1:
+                        curr_ptcl['x'] += 1
+                    else:
+                        raise ValueError('Invalid event')
+                    self.reset_clocks(ctx, curr_ptcl)
+
+            curr[p_ix] = curr_ptcl
+
+    def jump_clock_root(self, prev_ptcl, curr_ptcl):
+        time_a = prev_ptcl['ptcl_time']
+        jc_a = prev_ptcl['jump_clock']
+        time_b = curr_ptcl['ptcl_time']
+        jc_b = curr_ptcl['jump_clock']
+
+        assert jc_a > 0
+        assert jc_b < 0
+        assert time_a < time_b
+
+        return time_a + (time_b - time_a) * jc_a / (jc_a - jc_b)
+
+    def reset_clocks(self, ctx, ptcl):
+        if ptcl['x'] <= 0:
+            return
+
+        rng = ctx.component['random']['model']
+        ptcl['jump_clock'] = rng.random((1,))
+        ptcl['_jump_clock_u'] = ptcl['jump_clock']
+        ind_rate = ptcl['birthRate'] + ptcl['deathRate']
+        is_birth = (rng.random((1,)) * ind_rate) < ptcl['birthRate']
+        ptcl['jump_clock_type'] = is_birth.astype(np.int_)
+
+    def euler_step(self, ctx, ptcl, stop_time):
+        """
+        Perform an Euler step up until the stop time.
+        """
+        remaining_time = stop_time - ptcl['ptcl_time']
+        assert remaining_time >= 0
+        ptcl['ptcl_time'] += remaining_time
+
+        if ptcl['x'] <= 0:
+            ptcl['jump_clock'] = np.infty
+            return
+
+        if ptcl['x'] <= self.threshold:
+            j_u = ptcl['_jump_clock_u']
+            j_t = ptcl['jump_clock']
+            net_rate = (ptcl['birthRate'] + ptcl['deathRate']) * ptcl['x']
+            exp_of_intgrl = np.exp(- net_rate * remaining_time)
+            ptcl['jump_clock'] = j_u - (1 - (j_t - j_u + 1)*exp_of_intgrl)
+        else:
+            deriv = (ptcl['birthRate'] - ptcl['deathRate']) * ptcl['x']
+            ptcl['x'] += remaining_time * deriv
+            ptcl['jump_clock'] = np.infty
 
 
 # --------------------------------------------------------------------
