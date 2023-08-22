@@ -19,7 +19,7 @@ Simulations from the hybrid process are shown in [[fig:hybrid-non-vec][this figu
 #+attr_html: :width 400px
 [[./out/simulation-ctmc-not-vec.png]]
 
-#+caption: Simulations from the hybrid model
+#+caption: Simulations from the hybrid model (without vectorization and using the clock method)
 #+name: fig:hybrid-non-vec
 #+attr_org: :width 500px
 #+attr_html: :width 400px
@@ -32,11 +32,17 @@ and then attempt to estimate the parameters for the process using the
 hybrid model. The estimation of the birth rate as additional
 information is used is shown in Figure [[fig:inf-birth-rate]].
 
-#+caption: Inference example based on simulated data
+#+caption: Inference of birth rate based on simulated data
 #+name: fig:inf-birth-rate
 #+attr_org: :width 500px
 #+attr_html: :width 400px
 [[./out/inference-not-clocked-demo-birth-rate.png]]
+
+#+caption: Inference of state based on simulated data
+#+name: fig:inf-state
+#+attr_org: :width 500px
+#+attr_html: :width 400px
+[[./out/inference-not-clocked-demo-state.png]]
 
 There are two classes implementing inference with the hybrid model.
 The first, which generated the plot above, assumes that we can sample
@@ -46,11 +52,17 @@ process as a sequence of IVPs with random event times. The resulting
 posterior estimates for the birth rate with this model are shown in
 Figure [[fig:inf-birth-rate-clocked]].
 
-#+caption: Inference example based on simulated data with clocked implementation
+#+caption: Inference of birth rate based on simulated data with clocked implementation
 #+name: fig:inf-birth-rate-clocked
 #+attr_org: :width 500px
 #+attr_html: :width 400px
 [[./out/inference-clocked-demo-birth-rate.png]]
+
+#+caption: Inference of state based on simulated data with clocked implementation
+#+name: fig:inf-birth-rate-clocked
+#+attr_org: :width 500px
+#+attr_html: :width 400px
+[[./out/inference-clocked-demo-state.png]]
 
 * Environment
 
