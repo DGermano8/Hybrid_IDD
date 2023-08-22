@@ -43,9 +43,13 @@ def simulation_plot(sim_df, name):
             + geom_line(data = sim_df,
                         mapping = aes(x = "time",
                                       y = "value",
-                                      group = "particle"))
+                                      group = "particle"),
+                        alpha = 0.3)
             + scale_y_sqrt()
-            + labs(title = name))
+            + labs(title = name,
+                   y = "Population size",
+                   x = "Time")
+            + theme_bw())
 
 
 def main():
