@@ -1,0 +1,38 @@
+[metadata]
+name = "tiv simulation example"
+description = "Example of a TIV simulation"
+author = "Alexander E. Zarebski"
+date = "2023-08-24"
+
+[components]
+time = "pypfilt.Scalar"
+sampler = "pypfilt.sampler.LatinHypercube"
+summary = "pypfilt.summary.HDF5"
+
+[time]
+start = 0.0
+until = 8.0
+steps_per_unit = 100
+summaries_per_unit = 10
+
+[observations.T]
+model = "src.tiv.ObsThing"
+
+[observations.V]
+model = "src.tiv.ObsThing"
+
+[scenario.simulation]
+components.model = "src.tiv.TIV_ODE"
+prior.V0 = { name = "constant", args.value = 3.5E-1 }
+prior.beta = { name = "constant", args.value = 3.4E-5 }
+prior.p = { name = "constant", args.value = 7.9E-3 }
+prior.c = { name = "constant", args.value = 3.3 }
+prior.gamma = { name = "constant", args.value = 3.4 }
+prior.T = { name = "constant", args.value = 4E8 }
+prior.I = { name = "constant", args.value = 0.0 }
+num_replicates = 1
+
+[filter]
+particles = 1
+prng_seed = 1
+history_window = -1

@@ -5,6 +5,7 @@
     Do some stuff...
 
     1. preprocessing
+    2. runsimulation
   </description>
 
   <target name="preprocessing" depends="plot-raw-data"/>
@@ -15,5 +16,10 @@
     </exec>
   </target>
 
+  <target name="runsimulation">
+    <exec executable="python">
+      <arg path="src/run-simulation.py" />
+    </exec>
+  </target>
 
 </project>
