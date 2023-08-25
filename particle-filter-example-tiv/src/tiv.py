@@ -54,7 +54,7 @@ class TIV_ODE(Model):
         curr['V'] = prev['V'] + time_step.dt * dV_dt
 
 
-class ObsThing(Univariate):
+class PerfectMeasurement(Univariate):
     """
     """
 

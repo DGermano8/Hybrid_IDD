@@ -8,6 +8,7 @@ date = "2023-08-24"
 time = "pypfilt.Scalar"
 sampler = "pypfilt.sampler.LatinHypercube"
 summary = "pypfilt.summary.HDF5"
+model = "src.tiv.TIV_ODE"
 
 [time]
 start = 0.0
@@ -16,20 +17,31 @@ steps_per_unit = 100
 summaries_per_unit = 10
 
 [observations.T]
-model = "src.tiv.ObsThing"
+model = "src.tiv.PerfectMeasurement"
 
 [observations.V]
-model = "src.tiv.ObsThing"
+model = "src.tiv.PerfectMeasurement"
 
-[scenario.simulation]
-components.model = "src.tiv.TIV_ODE"
+[prior]
+T = { name = "constant", args.value = 4E8 }
+I = { name = "constant", args.value = 0.0 }
+
+[scenario.simulationP1]
+patient_number = 1
 prior.V0 = { name = "constant", args.value = 3.5E-1 }
 prior.beta = { name = "constant", args.value = 3.4E-5 }
 prior.p = { name = "constant", args.value = 7.9E-3 }
 prior.c = { name = "constant", args.value = 3.3 }
 prior.gamma = { name = "constant", args.value = 3.4 }
-prior.T = { name = "constant", args.value = 4E8 }
-prior.I = { name = "constant", args.value = 0.0 }
+num_replicates = 1
+
+[scenario.simulationP2]
+patient_number = 2
+prior.V0 = { name = "constant", args.value = 1.4E-3 }
+prior.beta = { name = "constant", args.value = 1.6E-4 }
+prior.p = { name = "constant", args.value = 4.1E-3 }
+prior.c = { name = "constant", args.value = 2.1 }
+prior.gamma = { name = "constant", args.value = 11.2 }
 num_replicates = 1
 
 [filter]

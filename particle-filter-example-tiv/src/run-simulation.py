@@ -41,8 +41,24 @@ def run_simulation(instance):
     return sim_df
 
 
-def read_data(filename):
+def read_data(filename, patient_num):
+    """
+    Reads the data from the data file.
+
+    Parameters
+    ----------
+    filename : str
+        The name of the data file.
+    patient_num : int
+        The patient number.
+
+    Returns
+    -------
+    tcid_df : pandas.DataFrame
+        A dataframe containing the data.
+    """
     tcid_df = pd.read_csv("data/tcid.csv")
+    tcid_df = tcid_df[tcid_df["patient"] == patient_num]
     tcid_df["log10_tcid"] = (tcid_df["log10_tcid"]
                              .astype(str)
                              .apply(lambda x:
@@ -61,6 +77,8 @@ def simulation_plot(sim_df, tcid_df):
     ----------
     sim_df : pandas.DataFrame
         A dataframe containing the simulation results.
+    tcid_df : pandas.DataFrame
+        A dataframe containing the raw patient data.
 
     Returns
     -------
@@ -71,6 +89,7 @@ def simulation_plot(sim_df, tcid_df):
                       id_vars = ['time'],
                       value_vars = ['V', 'T'])
 
+    plot_title = f"Viral load (patient {tcid_df['patient'].unique()[0]})"
     p9 = (ggplot()
           + geom_line(
               data = plot_df,
@@ -79,13 +98,15 @@ def simulation_plot(sim_df, tcid_df):
                             group = "variable",
                             linetype = "variable"))
           + geom_point(
-              data = tcid_df[tcid_df["patient"] == 1],
+              data = tcid_df,
               mapping = aes(x = "day",
                             y = "log10_tcid",
                             shape = "is_truncated"))
-          + labs(title = "Viral load (patient 1)",
+          + labs(title = plot_title,
                  y = "",
                  x = "Days post infection")
+          + scale_y_continuous(limits = [-4, 10],
+                               breaks = np.linspace(-4, 8, 7))
           + theme_bw()
           + theme(legend_position = "none"))
     return p9
@@ -95,16 +116,17 @@ def main():
     """
     """
     scenario_file = 'tiv-simulation.toml'
-    inst = list(pypfilt.load_instances(scenario_file))[0]
-    sim_df = run_simulation(inst)
-    data_df = read_data("data/tcid.csv")
-    cool_plot = simulation_plot(sim_df, data_df)
+    insts = list(pypfilt.load_instances(scenario_file))
 
-    cool_plot.save("out/baccam-fit.png",
-                   # height = 5.8, width = 8.3, # A5
-                   height = 4.1, width = 5.8 # A6
-                   # height = 2.9, width = 4.1, # A7
-                   )
+    for inst in insts:
+        patient_num = inst.settings['patient_number']
+        sim_df = run_simulation(inst)
+        data_df = read_data("data/tcid.csv", patient_num)
+        cool_plot = simulation_plot(sim_df, data_df)
+        cool_plot.save(
+            f"out/baccam-fit-{patient_num}.png",
+            height = 4.1, width = 5.8 # A6
+        )
     return None
 
 
