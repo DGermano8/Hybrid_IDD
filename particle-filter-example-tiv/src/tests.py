@@ -19,6 +19,17 @@ class TestScipyLognormal(unittest.TestCase):
     def test_pdf(self):
         for th in self.parameter_sets:
             scipy_vals = stats.lognorm.pdf(self.x, th['sigma'], scale = np.exp(th['mu']))
+            wrong_vals = stats.lognorm.pdf(self.x, s = th['sigma'], loc = th['mu'])
+            my_vals = self.pdf(self.x, th['mu'], th['sigma'])
+
+            for ix in range(len(self.x)):
+                self.assertAlmostEqual(scipy_vals[ix], my_vals[ix])
+                self.assertNotEqual(wrong_vals[ix], my_vals[ix])
+
+    def test_frozen(self):
+        for th in self.parameter_sets:
+            frozen_dist = stats.lognorm(th['sigma'], scale = np.exp(th['mu']))
+            scipy_vals = frozen_dist.pdf(self.x)
             my_vals = self.pdf(self.x, th['mu'], th['sigma'])
 
             for ix in range(len(self.x)):
