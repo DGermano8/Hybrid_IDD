@@ -6,6 +6,8 @@
 
     1. preprocessing
     2. runsimulation
+
+    n. test
   </description>
 
   <target name="preprocessing" depends="plot-raw-data"/>
@@ -19,6 +21,12 @@
   <target name="runsimulation">
     <exec executable="python">
       <arg path="src/run-simulation.py" />
+    </exec>
+  </target>
+
+  <target name="test">
+    <exec executable="python">
+      <arg path="src/tests.py" />
     </exec>
   </target>
 
