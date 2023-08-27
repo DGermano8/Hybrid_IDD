@@ -56,8 +56,19 @@ class TIV_ODE(Model):
 
 class PerfectMeasurement(Univariate):
     """
+    Measurement model for perfect measurements.
     """
 
     def distribution(self, ctx, snapshot):
         expect = np.log10(snapshot.state_vec[self.unit])
         return scipy.stats.norm(loc=expect, scale=0.0)
+
+class Gaussian(Univariate):
+    """
+    Measurement model for Gaussian measurements.
+    """
+
+    def distribution(self, ctx, snapshot):
+        loc = np.log10(snapshot.state_vec[self.unit])
+        scale = ctx.settings['observations'][self.unit]['scale']
+        return scipy.stats.norm(loc=loc, scale=scale)

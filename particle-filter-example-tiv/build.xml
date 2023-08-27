@@ -4,8 +4,8 @@
   <description>
     Do some stuff...
 
-    1. preprocessing
-    2. runsimulation
+    1. runsimulation
+    2. runinference
   </description>
 
   <target name="preprocessing" depends="plot-raw-data"/>
@@ -16,9 +16,22 @@
     </exec>
   </target>
 
-  <target name="runsimulation">
+  <target name="runsimulation"
+	  description="Generate plots using parameters from Baccam et al (2006)">
     <exec executable="python">
       <arg path="src/run-simulation.py" />
+    </exec>
+  </target>
+
+  <!-- Ensure that the preprocessing target has been run before trying to complete the runfinerence target -->
+  <target name="runinference"
+	  depends="runodeinference"
+	  description="Run inference of parameters"/>
+
+  <target name="runodeinference"
+	  depends="preprocessing">
+    <exec executable="python">
+      <arg path="src/run-ode-inference.py" />
     </exec>
   </target>
 
