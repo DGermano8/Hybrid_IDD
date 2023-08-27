@@ -4,8 +4,11 @@
   <description>
     Do some stuff...
 
-    1. runsimulation
-    2. runinference
+    1. preprocessing
+    2. runsimulation
+    3. runinference
+
+    n. test
   </description>
 
   <target name="preprocessing" depends="plot-raw-data"/>
@@ -32,6 +35,12 @@
 	  depends="preprocessing">
     <exec executable="python">
       <arg path="src/run-ode-inference.py" />
+    </exec>
+  </target>
+
+  <target name="test">
+    <exec executable="python">
+      <arg path="src/tests.py" />
     </exec>
   </target>
 
