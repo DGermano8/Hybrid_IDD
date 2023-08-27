@@ -32,11 +32,13 @@ def run_simulation(instance):
     my_obs_tables = pypfilt.simulate_from_model(
         instance, particles = num_reps
     )
+    num_summaries = round(my_obs_tables['V'].size / num_reps)
 
     sim_df = pd.DataFrame({
         'time': my_obs_tables['V']['time'],
         'V': my_obs_tables['V']['value'],
-        'T': my_obs_tables['T']['value']
+        'T': my_obs_tables['T']['value'],
+        'replicate': np.tile(np.arange(num_reps), num_summaries)
     })
     return sim_df
 
@@ -86,22 +88,28 @@ def simulation_plot(sim_df, tcid_df):
         The plot.
     """
     plot_df = pd.melt(sim_df,
-                      id_vars = ['time'],
+                      id_vars = ['time', 'replicate'],
                       value_vars = ['V', 'T'])
-
     plot_title = f"Viral load (patient {tcid_df['patient'].unique()[0]})"
     p9 = (ggplot()
           + geom_line(
-              data = plot_df,
+              data = plot_df[plot_df["variable"] == "T"],
+              mapping = aes(x = "time",
+                            y = "value")
+          )
+          + geom_line(
+              data = plot_df[plot_df["variable"] == "V"],
               mapping = aes(x = "time",
                             y = "value",
-                            group = "variable",
-                            linetype = "variable"))
+                            group = "replicate"),
+              alpha = 0.5)
           + geom_point(
               data = tcid_df,
               mapping = aes(x = "day",
                             y = "log10_tcid",
-                            shape = "is_truncated"))
+                            shape = "is_truncated"),
+              color = "red"
+          )
           + labs(title = plot_title,
                  y = "",
                  x = "Days post infection")
@@ -115,8 +123,7 @@ def simulation_plot(sim_df, tcid_df):
 def main():
     """
     """
-    scenario_file = 'tiv-simulation.toml'
-    insts = list(pypfilt.load_instances(scenario_file))
+    insts = list(pypfilt.load_instances('tiv-simulation.toml'))
 
     for inst in insts:
         patient_num = inst.settings['patient_number']

@@ -26,7 +26,6 @@
     </exec>
   </target>
 
-  <!-- Ensure that the preprocessing target has been run before trying to complete the runfinerence target -->
   <target name="runinference"
 	  depends="runodeinference"
 	  description="Run inference of parameters"/>

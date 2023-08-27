@@ -14,13 +14,14 @@ model = "src.tiv.TIV_ODE"
 start = 0.0
 until = 8.0
 steps_per_unit = 100
-summaries_per_unit = 10
+summaries_per_unit = 2
 
 [observations.T]
 model = "src.tiv.PerfectMeasurement"
 
 [observations.V]
-model = "src.tiv.PerfectMeasurement"
+model = "src.tiv.Gaussian"
+scale = 1.5
 
 [prior]
 T = { name = "constant", args.value = 4E8 }
@@ -33,7 +34,7 @@ prior.beta = { name = "constant", args.value = 3.4E-5 }
 prior.p = { name = "constant", args.value = 7.9E-3 }
 prior.c = { name = "constant", args.value = 3.3 }
 prior.gamma = { name = "constant", args.value = 3.4 }
-num_replicates = 1
+num_replicates = 100
 
 [scenario.simulationP2]
 patient_number = 2
@@ -42,7 +43,7 @@ prior.beta = { name = "constant", args.value = 1.6E-4 }
 prior.p = { name = "constant", args.value = 4.1E-3 }
 prior.c = { name = "constant", args.value = 2.1 }
 prior.gamma = { name = "constant", args.value = 11.2 }
-num_replicates = 1
+num_replicates = 100
 
 [filter]
 particles = 1
