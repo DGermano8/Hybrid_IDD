@@ -126,7 +126,7 @@ def simulation_plot(sim_df, tcid_df):
               mapping = aes(x = "time",
                             y = "value",
                             group = "replicate"),
-              alpha = 0.5)
+              alpha = 0.2)
           + geom_point(
               data = tcid_df,
               mapping = aes(x = "day",
