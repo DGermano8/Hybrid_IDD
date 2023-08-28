@@ -71,6 +71,30 @@ def read_data(filename, patient_num):
     return tcid_df
 
 
+def write_simulation(sim_df, patient_num):
+    """
+    Writes the simulation results to a file.
+
+    Parameters
+    ----------
+    sim_df : pandas.DataFrame
+        A dataframe containing the simulation results.
+    patient_num : int
+        The patient number.
+    """
+    for replicate in sim_df["replicate"].unique():
+        # zero-pad the replicate number to 3 digits
+        output_ssv = f"out/simulated-data-patient-{patient_num}-replicte-{replicate:03d}.ssv"
+        tmp = sim_df[sim_df["replicate"] == replicate]
+        tmp = tmp.assign(value = tmp['V'].round(1).clip(lower=0.5))
+        tmp = tmp[['time', 'value']]
+        tmp = tmp[tmp['time'] > 0.0]
+        tmp.to_csv(output_ssv,
+                   sep = " ",
+                   index = False,
+                   header = True)
+
+
 def simulation_plot(sim_df, tcid_df):
     """
     Plots the simulation results.
@@ -128,6 +152,7 @@ def main():
     for inst in insts:
         patient_num = inst.settings['patient_number']
         sim_df = run_simulation(inst)
+        write_simulation(sim_df, patient_num)
         data_df = read_data("data/tcid.csv", patient_num)
         cool_plot = simulation_plot(sim_df, data_df)
         cool_plot.save(

@@ -14,7 +14,7 @@ model = "src.tiv.TIV_ODE"
 start = 0.0
 until = 8.0
 steps_per_unit = 100
-summaries_per_unit = 2
+summaries_per_unit = 1
 
 [observations.T]
 model = "src.tiv.PerfectMeasurement"
