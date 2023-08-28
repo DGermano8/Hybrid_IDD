@@ -71,7 +71,7 @@ def read_data(filename, patient_num):
     return tcid_df
 
 
-def write_simulation(sim_df, patient_num):
+def write_simulation_data(sim_df, patient_num):
     """
     Writes the simulation results to a file.
 
@@ -95,7 +95,7 @@ def write_simulation(sim_df, patient_num):
                    header = True)
 
 
-def simulation_plot(sim_df, tcid_df):
+def write_simulation_plot(sim_df, tcid_df, patient_num):
     """
     Plots the simulation results.
 
@@ -105,6 +105,8 @@ def simulation_plot(sim_df, tcid_df):
         A dataframe containing the simulation results.
     tcid_df : pandas.DataFrame
         A dataframe containing the raw patient data.
+    patient_num : int
+        The patient number.
 
     Returns
     -------
@@ -141,7 +143,11 @@ def simulation_plot(sim_df, tcid_df):
                                breaks = np.linspace(-4, 8, 7))
           + theme_bw()
           + theme(legend_position = "none"))
-    return p9
+
+    p9.save(
+        f"out/baccam-fit-{patient_num}.png",
+        height = 4.1, width = 5.8 # A6
+    )
 
 
 def main():
@@ -152,13 +158,9 @@ def main():
     for inst in insts:
         patient_num = inst.settings['patient_number']
         sim_df = run_simulation(inst)
-        write_simulation(sim_df, patient_num)
+        write_simulation_data(sim_df, patient_num)
         data_df = read_data("data/tcid.csv", patient_num)
-        cool_plot = simulation_plot(sim_df, data_df)
-        cool_plot.save(
-            f"out/baccam-fit-{patient_num}.png",
-            height = 4.1, width = 5.8 # A6
-        )
+        write_simulation_plot(sim_df, data_df, patient_num)
     return None
 
 
