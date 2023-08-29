@@ -23,24 +23,24 @@ scale = 1.5
 [prior]
 T = { name = "constant", args.value = 4E8 }
 I = { name = "constant", args.value = 0.0 }
+beta = { name = "constant", args.value = 3.4E-5 }
+p = { name = "constant", args.value = 7.9E-3 }
+c = { name = "constant", args.value = 3.3 }
+gamma = { name = "constant", args.value = 3.4 }
 
-[scenario.simulationP1]
-patient_number = 1
-prior.V0 = { name = "uniform", args.loc = 1.0E-1, args.scale = 1.0E-1 }
-prior.beta = { name = "uniform", args.loc = 1.0E-6, args.scale = 1E-4 }
-prior.p = { name = "constant", args.value = 7.9E-3 }
-prior.c = { name = "constant", args.value = 3.3 }
-prior.gamma = { name = "constant", args.value = 3.4 }
-forecast_time = 7.9
+[scenario.simulation]
+prior.V0 = { name = "constant", args.value = 3.5E-1 }
+
+[scenario.inference]
+prior.V0 = { name = "uniform", args.loc = 1.0E-1, args.scale = 10.0 }
 summary.tables.model_cints.component = "pypfilt.summary.ModelCIs"
-summary.tables.model_cints.credible_intervals = [ 0, 50, 95 ]
+summary.tables.model_cints.credible_intervals = [10, 20, 30, 40, 50, 60, 70, 80, 90]
 summary.tables.forecasts.component = "pypfilt.summary.PredictiveCIs"
-summary.tables.forecasts.credible_intervals = [10, 20, 40, 80]
-observations.V.file = "out/simulated-data-patient-1-replicte-002.ssv"
+summary.tables.forecasts.credible_intervals = [10, 20, 30, 40, 50, 60, 70, 80, 90]
+observations.V.file = "simulated-data-for-inference.ssv"
 
 [filter]
 particles = 1000
 prng_seed = 1
 history_window = -1
 resample.threshold = 0.25
-regularisation.enabled = true
