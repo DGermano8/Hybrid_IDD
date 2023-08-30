@@ -45,6 +45,9 @@ def plottable_model_cis(model_ci_df):
     - ymin
     - ymax
     """
+    assert (model_ci_df['prob'].dtype == np.dtype('int8') or
+            model_ci_df['prob'].dtype == np.dtype('int32') or
+            model_ci_df['prob'].dtype == np.dtype('int64'))
     dd = sorted(model_ci_df.to_dict(orient= 'records'),
                 key=lambda k: k['prob'])
 
