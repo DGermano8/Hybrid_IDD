@@ -120,25 +120,27 @@ pst_df = pd.DataFrame(fit_result.estimation.tables['model_cints'])
 #  *********************************************************
 #
 #
+param_names = ['V0', 'beta', 'p', 'c', 'gamma']
 pst_param_df = pst_df[pst_df['time'] == end_time]
-pst_param_df = pst_param_df[pst_param_df['name'].isin(['V0', 'beta'])]
+pst_param_df = pst_param_df[pst_param_df['name'].isin(param_names)]
 pst_param_df = pst_param_df[['prob','ymin', 'ymax', 'name']]
 
-dd = pst_param_df[pst_param_df['name'] == 'V0']
-plt_df = plottable_model_cis(dd)
+for param in param_names:
+    dd = pst_param_df[pst_param_df['name'] == param]
+    plt_df = plottable_model_cis(dd)
 
-param_p9_V0 = (ggplot()
-               + geom_rect(
-                   data = plt_df,
-                   mapping = aes(xmin = 'ymin',
-                                 xmax = 'ymax',
-                                 ymin = 'xmin',
-                                 ymax = 'xmax')
-               )
-               )
-# Paper sizes must be specified in inches for this.
-param_p9_V0.save("demo-param-V0-histogram.png",
-        height = 5.8, width = 8.3)
+    param_p9_V0 = (ggplot()
+                   + geom_rect(
+                       data = plt_df,
+                       mapping = aes(xmin = 'ymin',
+                                     xmax = 'ymax',
+                                     ymin = 'xmin',
+                                     ymax = 'xmax')
+                      )
+                      )
+
+    param_p9_V0.save(f"demo-param-{param}-histogram.png",
+                     height = 5.8, width = 8.3)
 #
 #
 #  *****************************
