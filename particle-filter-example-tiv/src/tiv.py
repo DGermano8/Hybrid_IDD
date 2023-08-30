@@ -31,8 +31,8 @@ class TIV_ODE(Model):
         vec['p'] = prior['p']
         vec['c'] = prior['c']
         vec['gamma'] = prior['gamma']
-        vec['T'] = prior['T']
-        vec['I'] = 0.0          # I think???
+        vec['T'] = prior['T0']
+        vec['I'] = prior['I0']
         vec['V'] = vec['V0']
 
 
@@ -52,6 +52,11 @@ class TIV_ODE(Model):
         curr['T'] = prev['T'] + time_step.dt * dT_dt
         curr['I'] = prev['I'] + time_step.dt * dI_dt
         curr['V'] = prev['V'] + time_step.dt * dV_dt
+
+    def can_smooth(self):
+        """
+        """
+        return {'beta', 'p', 'c', 'gamma'}
 
 
 class PerfectMeasurement(Univariate):
