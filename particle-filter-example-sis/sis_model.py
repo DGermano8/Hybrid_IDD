@@ -3,7 +3,7 @@ import numpy as np
 from pypfilt.model import Model
 from pypfilt.obs import Univariate, Obs
 import pdb
-import placeholder
+import JSF_Solver_BasePython as JSF
 
 # --------------------------------------------------------------------
 # Define the process models
@@ -121,7 +121,18 @@ class SIS_Hybrid(Model):
     """
     """
 
+    num_particles = -1
     threshold = 50
+    _nu_reactants = [[1, 1],
+                     [0, 1]]
+    _nu_products = [[0, 2],
+                    [1, 0]]
+    _nu = [[a - b for a, b in zip(r1, r2)]
+           for r1, r2 in zip(_nu_products, _nu_reactants)]
+    _stoich = {'nu': _nu,
+               'DoDisc': [1, 1],
+               'nuReactant': _nu_reactants,
+               'nuProduct': _nu_products}
 
     def field_types(self, ctx):
         """
@@ -138,8 +149,8 @@ class SIS_Hybrid(Model):
         """
         """
         prior = ctx.data['prior']
-        num_particles = prior['I'].shape[0]
-        for p_ix in range(num_particles):
+        self.num_particles = prior['I'].shape[0]
+        for p_ix in range(self.num_particles):
             vec['S'][p_ix] = prior['S'][p_ix]
             vec['I'][p_ix] = prior['I'][p_ix]
             vec['N'][p_ix] = prior['S'][p_ix] + prior['I'][p_ix]
@@ -148,11 +159,40 @@ class SIS_Hybrid(Model):
             vec['next_time'][p_ix] = np.nan
             vec['next_event'][p_ix] = -1
 
+    def _rates(self, x, theta, time):
+        """
+        """
+        s = x[0]
+        i = x[1]
+        m_beta = theta[0]
+        m_gamma = theta[1]
+        return [m_beta*(s*i)/(s+i),
+                m_gamma*i]
+
     def update(self, ctx, time_step, is_forecast, prev, curr):
-        num_particles = prev['I'].shape[0]
-        for p_ix in range(num_particles):
-            # pdb.set_trace()
-            curr[p_ix] = placeholder.magic(ctx, time_step, prev[p_ix])
+
+        _my_opts = {'EnforceDo': [0, 0],
+                    'dt': time_step.dt,
+                    'SwitchingThreshold': [self.threshold,
+                                           self.threshold]}
+
+        for p_ix in range(self.num_particles):
+
+            ptcl = prev[p_ix].copy()
+            x0 = [ptcl['S'], ptcl['I']]
+            theta = [ptcl['betaCoef'], ptcl['gammaCoef']]
+
+            xs, ts = JSF.JumpSwitchFlowSimulator(
+                x0,
+                lambda x, time: self._rates(x, theta, time),
+                self._stoich,
+                time_step.dt,
+                _my_opts
+            )
+
+            ptcl['S'] = xs[0][-1]
+            ptcl['I'] = xs[1][-1]
+            curr[p_ix] = ptcl
 
 # --------------------------------------------------------------------
 # Define the observation models
