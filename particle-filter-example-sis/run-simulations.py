@@ -44,7 +44,7 @@ def simulation_plot(sim_df, name):
                                       y = "value",
                                       group = "particle"),
                         alpha = 0.3)
-            + scale_y_sqrt()
+            + scale_y_sqrt(limits = (0, 600))
             + labs(title = name,
                    y = "Population size",
                    x = "Time")

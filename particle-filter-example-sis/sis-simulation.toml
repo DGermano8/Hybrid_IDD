@@ -12,7 +12,7 @@ summary = "pypfilt.summary.HDF5"
 [time]
 start = 0.0
 until = 60.0
-steps_per_unit = 10
+steps_per_unit = 50
 summaries_per_unit = 2
 
 [observations.I]
@@ -23,8 +23,8 @@ model = "sis_model.UniformObservation"
 simulation_name = "ODE style process"
 components.model = "sis_model.SIS_ODE"
 observations.I.model = "sis_model.GaussianStateObservation"
-prior.S = { name = "constant", args.value = 990.0 }
-prior.I = { name = "constant", args.value = 10.0 }
+prior.S = { name = "constant", args.value = 995.0 }
+prior.I = { name = "constant", args.value = 5.0 }
 prior.betaCoef = { name = "constant", args.value = 0.28 }
 prior.gammaCoef = { name = "constant", args.value = 0.14 }
 num_replicates = 10
@@ -35,8 +35,8 @@ plot_path = "out/simulation-ode.png"
 simulation_name = "CTMC style process"
 components.model = "sis_model.SIS_CTMC"
 observations.I.model = "sis_model.UniformObservation"
-prior.S = { name = "constant", args.value = 990.0 }
-prior.I = { name = "constant", args.value = 10.0 }
+prior.S = { name = "constant", args.value = 995.0 }
+prior.I = { name = "constant", args.value = 5.0 }
 prior.betaCoef = { name = "constant", args.value = 0.28 }
 prior.gammaCoef = { name = "constant", args.value = 0.14 }
 num_replicates = 100
@@ -46,8 +46,8 @@ plot_path = "out/simulation-ctmc.png"
 [scenario.simulation4]
 simulation_name = "Hybrid style process"
 components.model = "sis_model.SIS_Hybrid"
-prior.S = { name = "constant", args.value = 990.0 }
-prior.I = { name = "constant", args.value = 10.0 }
+prior.S = { name = "constant", args.value = 995.0 }
+prior.I = { name = "constant", args.value = 5.0 }
 prior.betaCoef = { name = "constant", args.value = 0.28 }
 prior.gammaCoef = { name = "constant", args.value = 0.14 }
 num_replicates = 100
