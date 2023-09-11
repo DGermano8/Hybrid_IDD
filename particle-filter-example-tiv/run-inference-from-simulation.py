@@ -175,6 +175,8 @@ def state_plt_p9(post_df: pd.DataFrame,
 
 
 def main():
+    out_dir = "out"
+    in_toml = "tiv-inference-from-simulation.toml"
     #
     # Define parameter and variable names
     #
@@ -182,15 +184,15 @@ def main():
     state_names = ['T', 'I', 'V']
     inst_dict = {
         x.scenario_id: x
-        for x in pypfilt.load_instances("tiv-inference-from-simulation.toml")
+        for x in pypfilt.load_instances(in_toml)
        }
+    obs_ssv = inst_dict['simulation'].settings['sim_output_file']
     #
     # Simulate some observations
     #
     sim_params = const_params_from_prior(inst_dict['simulation'].settings["prior"])
     sim_result = pypfilt.simulate_from_model(inst_dict['simulation'])
     obs_df = pd.DataFrame(sim_result['V'])
-    obs_ssv = inst_dict['inference'].settings['observations']['V']['file']
     obs_df.to_csv(obs_ssv, sep = ' ', index = False)
     #
     # Run the particle filter over simulated data
@@ -211,7 +213,7 @@ def main():
         plt_df = plottable_model_cis(dd)
         param_p9 = param_plt_p9(plt_df, sim_params[param], mrgs[param],
                                 param)
-        param_p9.save(f"demo-param-{param}-histogram.png",
+        param_p9.save(f"{out_dir}/demo-param-{param}-histogram.png",
                       height = 5.8, width = 8.3)
     #
     # Plot the state trajectory
@@ -222,7 +224,7 @@ def main():
     plt_df_obs = obs_df.copy()
     plt_df_obs['y'] = 10**plt_df_obs['value']
     state_p9 = state_plt_p9(plt_df, plt_df_obs)
-    state_p9.save("demo-state-trajectory.png",
+    state_p9.save(f"{out_dir}/demo-state-trajectory.png",
             height = 4.1, width = 5.8)
 
 

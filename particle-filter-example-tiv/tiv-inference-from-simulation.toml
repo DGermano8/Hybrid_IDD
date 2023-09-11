@@ -30,6 +30,7 @@ prior.beta = { name = "constant", args.value = 3.4E-5 }
 prior.p = { name = "constant", args.value = 7.9E-3 }
 prior.c = { name = "constant", args.value = 3.3 }
 prior.gamma = { name = "constant", args.value = 3.4 }
+sim_output_file = "out/simulated-data-for-inference.ssv"
 
 [scenario.inference]
 prior.V0 = { name = "uniform", args.loc = 1.0E-3, args.scale = 1.0 }
@@ -41,7 +42,7 @@ summary.tables.model_cints.component = "pypfilt.summary.ModelCIs"
 summary.tables.model_cints.credible_intervals = [10, 20, 30, 40, 50, 60, 70, 80, 90]
 summary.tables.forecasts.component = "pypfilt.summary.PredictiveCIs"
 summary.tables.forecasts.credible_intervals = [10, 20, 30, 40, 50, 60, 70, 80, 90]
-observations.V.file = "simulated-data-for-inference.ssv"
+observations.V.file = "out/simulated-data-for-inference.ssv"
 
 [filter]
 particles = 10000
