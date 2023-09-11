@@ -93,13 +93,6 @@ The =run-inference-from-simulation.py= script runs a program which
 simulates a data set and then uses an ODE model (with a particle
 filter) to estimate the parameters that where used.
 
-** TODO Extract core computations to module
-
-This demonstrates the main points, but should probably be abstracted
-into so we can just give it some TOML and it will do the inference.
-This way it will be easier to use across both the real and simulated
-data.
-
 ** TODO Estimate rate parameters in terms of their logarithm
 
 * Inference example
