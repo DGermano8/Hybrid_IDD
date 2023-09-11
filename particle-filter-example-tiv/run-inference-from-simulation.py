@@ -9,7 +9,7 @@
 # simulated data based on parameters from Baccam et al (2006).
 #
 #
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import numpy as np
 import scipy.stats              # type: ignore
 import pypfilt                  # type: ignore
@@ -110,7 +110,8 @@ def marginals_from_prior(prior : Dict) -> Dict[str, Any]:
 
 def param_plt_p9(plt_df: pd.DataFrame,
                  true_value: float,
-                 prior: Dict) -> p9.ggplot:
+                 prior: Dict,
+                 param_name: Optional[str]) -> p9.ggplot:
     """
     Plot the posterior distribution of the parameter as described by
     the given data frame.
@@ -128,6 +129,7 @@ def param_plt_p9(plt_df: pd.DataFrame,
                 + geom_vline(xintercept = true_value,
                                 color = 'red')
                 )
+
     if prior["name"] == "uniform":
         min_val = prior["args"]["loc"]
         max_val = prior["args"]["scale"]
@@ -140,7 +142,11 @@ def param_plt_p9(plt_df: pd.DataFrame,
                                  color = 'red',
                                  linetype = 'dashed'))
 
-    return param_p9
+    if param_name is not None:
+        param_p9 = (param_p9 +
+                    labs(title = "Posterior distribution of " + param_name))
+
+    return ( param_p9 + theme_bw() )
 
 
 def state_plt_p9(post_df: pd.DataFrame,
@@ -151,12 +157,13 @@ def state_plt_p9(post_df: pd.DataFrame,
     """
     return (ggplot()
             + geom_ribbon(
-                data = plt_df,
-                mapping = aes(x = 'time', ymin = 'ymin', ymax = 'ymax', group = "prob"),
+                data = post_df,
+                mapping = aes(x = 'time', ymin = 'ymin',
+                              ymax = 'ymax', group = "prob"),
                 alpha = 0.1
             )
             + geom_point(
-                data = plt_df_obs,
+                data = obs_df,
                 mapping = aes(x = 'time', y = 'y'),
                 color = 'red'
             )
@@ -165,85 +172,59 @@ def state_plt_p9(post_df: pd.DataFrame,
             + labs(title = "State trajectory",
                    caption = "Inference on simulated data")
             + theme_bw())
-#
-#
-#  ***************************************
-#  *                                     *
-#  * Define parameter and variable names *
-#  *                                     *
-#  ***************************************
-#
-#
-param_names = ['V0', 'beta', 'p', 'c', 'gamma']
-state_names = ['T', 'I', 'V']
-#
-#
-#  ******************************
-#  *                            *
-#  * Simulate some observations *
-#  *                            *
-#  ******************************
-#
-#
-inst_dict = {
-    x.scenario_id: x
-    for x in pypfilt.load_instances("tiv-inference-from-simulation.toml")
-}
-sim_params = const_params_from_prior(inst_dict['simulation'].settings["prior"])
-sim_result = pypfilt.simulate_from_model(inst_dict['simulation'])
-obs_df = pd.DataFrame(sim_result['V'])
-obs_ssv = inst_dict['inference'].settings['observations']['V']['file']
-obs_df.to_csv(obs_ssv, sep = ' ', index = False)
-#
-#
-#  ***********************************************
-#  *                                             *
-#  * Run the particle filter over simulated data *
-#  *                                             *
-#  ***********************************************
-#
-#
-inf_ctx = inst_dict['inference'].build_context()
-mrgs = marginals_from_prior(inf_ctx.settings['prior'])
-end_time = inf_ctx.settings['time']['until']
-fit_result = pypfilt.fit(inf_ctx, filename=None)
-pst_df = pd.DataFrame(fit_result.estimation.tables['model_cints'])
-#
-#
-#  *********************************************************
-#  *                                                       *
-#  * Plot the prior-posterior distributions for parameters *
-#  *                                                       *
-#  *********************************************************
-#
-#
-pst_param_df = pst_df[pst_df['time'] == end_time]
-pst_param_df = pst_param_df[pst_param_df['name'].isin(param_names)]
-pst_param_df = pst_param_df[['prob','ymin', 'ymax', 'name']]
 
-for param in param_names:
-    dd = pst_param_df[pst_param_df['name'] == param]
-    plt_df = plottable_model_cis(dd)
-    param_p9 = param_plt_p9(plt_df, sim_params[param], mrgs[param])
-    param_p9.save(f"demo-param-{param}-histogram.png",
-                  height = 5.8, width = 8.3)
-#
-#
-#  *****************************
-#  *                           *
-#  * Plot the state trajectory *
-#  *                           *
-#  *****************************
-#
-#
-pst_state_df = pst_df[pst_df['name'].isin(state_names)]
-pst_state_df = pst_state_df[['time', 'prob','ymin', 'ymax', 'name']]
 
-plt_df = pst_state_df[pst_state_df['name'] == 'V']
-plt_df_obs = obs_df.copy()
-plt_df_obs['y'] = 10**plt_df_obs['value']
+def main():
+    #
+    # Define parameter and variable names
+    #
+    param_names = ['V0', 'beta', 'p', 'c', 'gamma']
+    state_names = ['T', 'I', 'V']
+    inst_dict = {
+        x.scenario_id: x
+        for x in pypfilt.load_instances("tiv-inference-from-simulation.toml")
+       }
+    #
+    # Simulate some observations
+    #
+    sim_params = const_params_from_prior(inst_dict['simulation'].settings["prior"])
+    sim_result = pypfilt.simulate_from_model(inst_dict['simulation'])
+    obs_df = pd.DataFrame(sim_result['V'])
+    obs_ssv = inst_dict['inference'].settings['observations']['V']['file']
+    obs_df.to_csv(obs_ssv, sep = ' ', index = False)
+    #
+    # Run the particle filter over simulated data
+    #
+    inf_ctx = inst_dict['inference'].build_context()
+    mrgs = marginals_from_prior(inf_ctx.settings['prior'])
+    end_time = inf_ctx.settings['time']['until']
+    fit_result = pypfilt.fit(inf_ctx, filename=None)
+    pst_df = pd.DataFrame(fit_result.estimation.tables['model_cints'])
+    #
+    # Plot the prior-posterior distributions for parameters
+    #
+    pst_param_df = pst_df[pst_df['time'] == end_time]
+    pst_param_df = pst_param_df[pst_param_df['name'].isin(param_names)]
+    pst_param_df = pst_param_df[['prob','ymin', 'ymax', 'name']]
+    for param in param_names:
+        dd = pst_param_df[pst_param_df['name'] == param]
+        plt_df = plottable_model_cis(dd)
+        param_p9 = param_plt_p9(plt_df, sim_params[param], mrgs[param],
+                                param)
+        param_p9.save(f"demo-param-{param}-histogram.png",
+                      height = 5.8, width = 8.3)
+    #
+    # Plot the state trajectory
+    #
+    pst_state_df = pst_df[pst_df['name'].isin(state_names)]
+    pst_state_df = pst_state_df[['time', 'prob','ymin', 'ymax', 'name']]
+    plt_df = pst_state_df[pst_state_df['name'] == 'V']
+    plt_df_obs = obs_df.copy()
+    plt_df_obs['y'] = 10**plt_df_obs['value']
+    state_p9 = state_plt_p9(plt_df, plt_df_obs)
+    state_p9.save("demo-state-trajectory.png",
+            height = 4.1, width = 5.8)
 
-state_p9 = state_plt_p9(plt_df, plt_df_obs)
 
-state_p9.save("demo-state-trajectory.png",
-        height = 4.1, width = 5.8)
+if __name__ == "__main__":
+    main()
