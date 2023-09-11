@@ -42,7 +42,6 @@ summary.tables.model_cints.component = "pypfilt.summary.ModelCIs"
 summary.tables.model_cints.credible_intervals = [10, 20, 30, 40, 50, 60, 70, 80, 90]
 summary.tables.forecasts.component = "pypfilt.summary.PredictiveCIs"
 summary.tables.forecasts.credible_intervals = [10, 20, 30, 40, 50, 60, 70, 80, 90]
-observations.V.file = "out/simulated-data-for-inference.ssv"
 
 [filter]
 particles = 10000

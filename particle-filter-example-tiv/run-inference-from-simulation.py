@@ -21,7 +21,12 @@ import pandas as pd
 import plotnine as p9
 from plotnine import ggplot, geom_rect, aes, geom_ribbon, geom_point, scale_y_log10, scale_x_continuous, labs, theme_bw, geom_vline
 import pdb
-from src.inf import plottable_model_cis, param_plt_p9, state_plt_p9, tiv_run_inference
+from src.inf import *
+
+# import the src.inf package again using the reload method from the imports module
+from importlib import reload
+import src.inf
+reload(src.inf)
 
 
 def const_params_from_prior(prior : Dict) -> Dict[str, float]:
@@ -57,6 +62,7 @@ def main():
     #
     # Run the particle filter over simulated data
     #
+    inst_dict['inference'].settings['observations']['V']['file'] = "out/simulated-data-for-inference.ssv"
     inf_ctx = inst_dict['inference'].build_context()
     inf_results = tiv_run_inference(inf_ctx)
     #
