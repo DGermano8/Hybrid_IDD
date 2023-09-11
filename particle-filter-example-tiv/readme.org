@@ -97,7 +97,7 @@ filter) to estimate the parameters that where used.
 
 * Inference example
 
-** TODO Apply inference to each of Baccam patients
+** TODO Include the state plots in =run-inf-cli.py=
 
 ** TODO Use the JSF for the simulation
 
