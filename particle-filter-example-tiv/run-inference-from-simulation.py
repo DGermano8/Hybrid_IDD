@@ -21,7 +21,7 @@ import pandas as pd
 import plotnine as p9
 from plotnine import ggplot, geom_rect, aes, geom_ribbon, geom_point, scale_y_log10, scale_x_continuous, labs, theme_bw, geom_vline
 import pdb
-from src.inf import plottable_model_cis, param_plt_p9, state_plt_p9
+from src.inf import plottable_model_cis, param_plt_p9, state_plt_p9, tiv_run_inference
 
 
 def const_params_from_prior(prior : Dict) -> Dict[str, float]:
@@ -33,30 +33,6 @@ def const_params_from_prior(prior : Dict) -> Dict[str, float]:
     is_const = lambda n: prior[n]["name"] == "constant"
     return {p : prior[p]["args"]["value"]
             for p in param_names if is_const(p) }
-
-
-def tiv_run_inference(inf_ctx : pypfilt.Context) -> Dict[str, Any]:
-    """
-    Run inference based on the context provided.
-    """
-    state_names = ['T', 'I', 'V']
-    param_names = ["V0", "beta", "p", "c", "gamma"]
-    prior = inf_ctx.settings['prior']
-    has_prior = lambda n: prior[n]["name"] != "constant"
-    mrgs = {p : prior[p]
-            for p in param_names if has_prior(p) }
-    end_time = inf_ctx.settings['time']['until']
-    fit_result = pypfilt.fit(inf_ctx, filename=None)
-    pst_df = pd.DataFrame(fit_result.estimation.tables['model_cints'])
-    pst_state_df = pst_df[pst_df['name'].isin(state_names)]
-    pst_state_df = pst_state_df[['time', 'prob','ymin', 'ymax', 'name']]
-    pst_param_df = pst_df[pst_df['time'] == end_time]
-    pst_param_df = pst_param_df[pst_param_df['name'].isin(param_names)]
-    pst_param_df = pst_param_df[['prob','ymin', 'ymax', 'name']]
-    return {'posterior_state_df': pst_state_df,
-            'posterior_param_df': pst_param_df,
-            'end_time': end_time,
-            'marginals': mrgs}
 
 
 def main():

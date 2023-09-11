@@ -130,3 +130,27 @@ def param_plt_p9(plt_df: pd.DataFrame,
                     labs(title = "Posterior distribution of " + param_name))
 
     return ( param_p9 + theme_bw() )
+
+
+def tiv_run_inference(inf_ctx : pypfilt.Context) -> Dict[str, Any]:
+    """
+    Run inference based on the context provided.
+    """
+    state_names = ['T', 'I', 'V']
+    param_names = ["V0", "beta", "p", "c", "gamma"]
+    prior = inf_ctx.settings['prior']
+    has_prior = lambda n: prior[n]["name"] != "constant"
+    mrgs = {p : prior[p]
+            for p in param_names if has_prior(p) }
+    end_time = inf_ctx.settings['time']['until']
+    fit_result = pypfilt.fit(inf_ctx, filename=None)
+    pst_df = pd.DataFrame(fit_result.estimation.tables['model_cints'])
+    pst_state_df = pst_df[pst_df['name'].isin(state_names)]
+    pst_state_df = pst_state_df[['time', 'prob','ymin', 'ymax', 'name']]
+    pst_param_df = pst_df[pst_df['time'] == end_time]
+    pst_param_df = pst_param_df[pst_param_df['name'].isin(param_names)]
+    pst_param_df = pst_param_df[['prob','ymin', 'ymax', 'name']]
+    return {'posterior_state_df': pst_state_df,
+            'posterior_param_df': pst_param_df,
+            'end_time': end_time,
+            'marginals': mrgs}
