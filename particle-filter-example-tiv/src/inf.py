@@ -92,8 +92,8 @@ def state_plt_p9(post_df: pd.DataFrame,
 
 
 def param_plt_p9(plt_df: pd.DataFrame,
-                 true_value: float,
-                 prior: Dict,
+                 true_value: Optional[float],
+                 prior: Optional[Dict],
                  param_name: Optional[str]) -> p9.ggplot:
     """
     Plot the posterior distribution of the parameter as described by
@@ -107,23 +107,23 @@ def param_plt_p9(plt_df: pd.DataFrame,
                     mapping = aes(xmin = 'ymin',
                                   xmax = 'ymax',
                                   ymin = 'xmin',
-                                  ymax = 'xmax')
-                )
-                + geom_vline(xintercept = true_value,
-                                color = 'red')
-                )
+                                  ymax = 'xmax')))
 
-    if prior["name"] == "uniform":
-        min_val = prior["args"]["loc"]
-        max_val = prior["args"]["scale"]
-        support = (min_val, max_val)
-        param_p9 = (param_p9
-                    + geom_vline(xintercept = min_val,
-                                 color = 'red',
-                                 linetype = 'dashed')
-                    + geom_vline(xintercept = max_val,
-                                 color = 'red',
-                                 linetype = 'dashed'))
+    if true_value is not None:
+        param_p9 = (param_p9 + geom_vline(xintercept = true_value, color = 'red'))
+
+    if prior is not None:
+        if prior["name"] == "uniform":
+            min_val = prior["args"]["loc"]
+            max_val = prior["args"]["scale"]
+            support = (min_val, max_val)
+            param_p9 = (param_p9
+                        + geom_vline(xintercept = min_val,
+                                     color = 'red',
+                                     linetype = 'dashed')
+                        + geom_vline(xintercept = max_val,
+                                     color = 'red',
+                                     linetype = 'dashed'))
 
     if param_name is not None:
         param_p9 = (param_p9 +
