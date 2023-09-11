@@ -21,15 +21,8 @@ import pandas as pd
 import plotnine as p9
 from plotnine import ggplot, geom_rect, aes, geom_ribbon, geom_point, scale_y_log10, scale_x_continuous, labs, theme_bw, geom_vline
 import pdb
-
 #
-#
-#  ********************
-#  *                  *
-#  * Helper functions *
-#  *                  *
-#  ********************
-#
+# Helper functions
 #
 def plottable_model_cis(model_ci_df : pd.DataFrame) -> pd.DataFrame:
     """
