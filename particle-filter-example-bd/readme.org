@@ -68,3 +68,14 @@ Figure [[fig:inf-birth-rate-clocked]].
 
 The [[file:./requirements.txt][requirements.txt]] file contains a description of the packages (and
 versions) needed to run this.
+
+** Setting up the environment
+
+Use the following to set up a virtual environment.
+
+#+begin_src sh
+  python3 -m venv venv
+  source venv/bin/activate
+  pip install -U pip
+  pip install -r requirements.txt
+#+end_src
