@@ -42,12 +42,6 @@ and
 #+attr_html: :width 400px
 [[./out/simulation-ctmc.png]]
 
-** TODO This still needs to be implemented properly, it is using the CTMC code at the moment
-
-The following figure is only a placeholder, it still uses the CTMC
-code to simulate from the process, but this has been split out into
-the [[file:./placeholder.py]] module (specifically the =magic= function).
-
 #+caption: Simulations with the hybrid model
 #+name: fig:sim-hybrid
 #+attr_org: :width 500px
