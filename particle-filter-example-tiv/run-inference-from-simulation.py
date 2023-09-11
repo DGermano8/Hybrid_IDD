@@ -9,15 +9,17 @@
 # simulated data based on parameters from Baccam et al (2006).
 #
 #
+from typing import List, Dict
 import numpy as np
-import scipy.stats
-import pypfilt
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-import matplotlib as matplotlib
+import scipy.stats              # type: ignore
+import pypfilt                  # type: ignore
+import matplotlib.pyplot as plt # type: ignore
+import matplotlib.image as mpimg # type: ignore
+import matplotlib as matplotlib # type: ignore
 matplotlib.use('QtAgg')
 import pandas as pd
 import plotnine as p9
+from plotnine import ggplot, geom_rect, aes, geom_ribbon, geom_point, scale_y_log10, scale_x_continuous, labs, theme_bw
 from plotnine import *
 
 #
@@ -29,7 +31,7 @@ from plotnine import *
 #  ********************
 #
 #
-def plottable_model_cis(model_ci_df):
+def plottable_model_cis(model_ci_df : pd.DataFrame) -> pd.DataFrame:
     """
     Converts the model_cints table into a dataframe that can be
     plotted using plot9.
@@ -51,7 +53,8 @@ def plottable_model_cis(model_ci_df):
     dd = sorted(model_ci_df.to_dict(orient= 'records'),
                 key=lambda k: k['prob'])
 
-    left_blocks, right_blocks = [], []
+    left_blocks : List[Dict] = []
+    right_blocks : List[Dict] = []
     prev_prob = 0
     probs = [d['prob'] for d in dd]
     start_prob = np.array(probs).min()
@@ -127,7 +130,7 @@ pst_param_df = pst_param_df[['prob','ymin', 'ymax', 'name']]
 
 for param in param_names:
     dd = pst_param_df[pst_param_df['name'] == param]
-    plt_df = plottable_model_cis(dd)
+    plt_df : pd.DataFrame = plottable_model_cis(dd)
 
     param_p9_V0 = (ggplot()
                    + geom_rect(
