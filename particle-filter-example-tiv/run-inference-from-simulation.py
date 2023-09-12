@@ -34,7 +34,7 @@ def const_params_from_prior(prior : Dict) -> Dict[str, float]:
     Extract the constant parameters used in the simulation from the
     prior.
     """
-    param_names = ["V0", "beta", "p", "c", "gamma"]
+    param_names = ["lnV0", "beta", "p", "c", "gamma"]
     is_const = lambda n: prior[n]["name"] == "constant"
     return {p : prior[p]["args"]["value"]
             for p in param_names if is_const(p) }
@@ -46,7 +46,7 @@ def main():
     #
     # Define parameter and variable names
     #
-    param_names = ['V0', 'beta', 'p', 'c', 'gamma']
+    param_names = ['lnV0', 'beta', 'p', 'c', 'gamma']
     inst_dict = {
         x.scenario_id: x
         for x in pypfilt.load_instances(in_toml)

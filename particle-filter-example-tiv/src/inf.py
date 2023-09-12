@@ -137,7 +137,7 @@ def tiv_run_inference(inf_ctx : pypfilt.Context) -> Dict[str, Any]:
     Run inference based on the context provided.
     """
     state_names = ['T', 'I', 'V']
-    param_names = ["V0", "beta", "p", "c", "gamma"]
+    param_names = ["lnV0", "beta", "p", "c", "gamma"]
     prior = inf_ctx.settings['prior']
     has_prior = lambda n: prior[n]["name"] != "constant"
     mrgs = {p : prior[p]

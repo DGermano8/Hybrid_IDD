@@ -109,9 +109,9 @@ These files just need to have variable names updated
 
 - [X] =cli-tiv-demo.toml=
 - [X] =tiv-inference-from-simulation.toml=
-- [ ] =run-inference-from-simulation.py=
-- [ ] =run-inf-cli.py=
-- [ ] =src/inf.py=
+- [X] =run-inference-from-simulation.py=
+- [X] =run-inf-cli.py=
+- [X] =src/inf.py=
 
 The model files need non-trivial modification to ensure that we are
 handling the parameters correctly.

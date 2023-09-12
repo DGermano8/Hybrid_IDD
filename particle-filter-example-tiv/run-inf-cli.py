@@ -47,7 +47,7 @@ def read_cli_args() -> Dict[str, Any]:
 def main():
     cli_args = read_cli_args()
     out_dir = cli_args["out"]
-    param_names = ['V0', 'beta', 'p', 'c', 'gamma']
+    param_names = ['lnV0', 'beta', 'p', 'c', 'gamma']
     inst = list(pypfilt.load_instances(cli_args["input_toml"]))[0]
     inst.settings['observations']['V']['file'] = cli_args['obs_ssv']
     inf_ctx = inst.build_context()
