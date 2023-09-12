@@ -93,9 +93,32 @@ The =run-inference-from-simulation.py= script runs a program which
 simulates a data set and then uses an ODE model (with a particle
 filter) to estimate the parameters that where used.
 
+You can run this (after activating the virutal environment) with
+
+#+begin_src sh
+  python run-inference-from-simulation.py
+#+end_src
+
+Look in the output directory for the results.
+
 ** TODO Estimate rate parameters in terms of their logarithm
 
+** TODO Extend the observation model to account for censoring
+
 * Inference example
+
+You can run this (after activating the virutal environment) with
+command such as the following:
+
+#+begin_src sh
+  python run-inf-cli.py --out out/patient-1 --input_toml cli-tiv-demo.toml --obs_ssv data/patient-1-censored.ssv --param_plots
+#+end_src
+
+This stores results in the =out/patient-1= directory and uses the
+=cli-tiv-demo.toml= to specify the inference scenario in terms of the
+process defined in =src/tiv.py=. The data provided to the inference is
+in =data/patient-1-censored.ssv= and =--param_plots= tells the script
+that we want visualisations of the marginal posterior distributions.
 
 ** TODO Include the state plots in =run-inf-cli.py=
 
