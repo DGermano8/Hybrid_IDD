@@ -1,4 +1,17 @@
-python run-inf-cli.py --out out/patient-1 --input_toml cli-tiv-demo.toml --obs_ssv data/patient-1-censored.ssv --param_plots
-python run-inf-cli.py --out out/patient-2 --input_toml cli-tiv-demo.toml --obs_ssv data/patient-2-censored.ssv --param_plots
-
-# python run-inf-cli.py --out out-demo --input_toml cli-tiv-demo.toml --obs_ssv out/simulated-data-for-inference.ssv --param_plots
+#!/usr/bin/env bash
+#
+# Run the TIV model on the Baccam data sets for each individual
+# separately as described in their manuscript.
+#
+# This script will create a directory for each patient in the out/
+# directory and run the model for each patient.  The output will be
+# placed in the patient's directory.
+#
+for i in {1..6}
+do
+    echo "Running patient $i"
+    if [ ! -d "out/patient-$i" ]; then
+	mkdir out/patient-$i
+    fi
+    python run-inf-cli.py --out out/patient-$i --input_toml cli-tiv-demo.toml --obs_ssv data/patient-$i-censored.ssv --param_plots --state_plot
+done
