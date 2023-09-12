@@ -114,14 +114,13 @@ def param_plt_p9(plt_df: pd.DataFrame,
 
     if prior is not None:
         if prior["name"] == "uniform":
-            min_val = prior["args"]["loc"]
-            max_val = prior["args"]["scale"]
-            support = (min_val, max_val)
+            loc_val = prior["args"]["loc"]
+            scale_val = prior["args"]["scale"]
             param_p9 = (param_p9
-                        + geom_vline(xintercept = min_val,
+                        + geom_vline(xintercept = loc_val,
                                      color = 'red',
                                      linetype = 'dashed')
-                        + geom_vline(xintercept = max_val,
+                        + geom_vline(xintercept = loc_val + scale_val,
                                      color = 'red',
                                      linetype = 'dashed'))
 

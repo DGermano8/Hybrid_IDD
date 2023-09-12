@@ -49,8 +49,8 @@ resample.threshold = 0.25
 regularisation.enabled = true
 
 [filter.regularisation.bounds]
-lnV0 = { min = -10.0, max = 10.0 }
 beta = { min = 0.0, max = 1E10 }
 p = { min = 0.0, max = 1E10 }
+lnV0 = { min = -20.0, max = 10.0 }
 c = { min = 0.0, max = 1E10 }
 gamma = { min = 0.0, max = 1E10 }

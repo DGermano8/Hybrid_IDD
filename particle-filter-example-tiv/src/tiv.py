@@ -11,7 +11,7 @@ class TIV_ODE(Model):
         """
         """
         return [
-            ('V0', np.float_),
+            ('lnV0', np.float_),
             ('beta', np.float_),
             ('p', np.float_),
             ('c', np.float_),
@@ -26,22 +26,22 @@ class TIV_ODE(Model):
         """
         prior = ctx.data['prior']
 
-        vec['V0'] = prior['V0']
         vec['beta'] = prior['beta']
         vec['p'] = prior['p']
+        vec['lnV0'] = prior['lnV0']
         vec['c'] = prior['c']
         vec['gamma'] = prior['gamma']
         vec['T'] = prior['T0']
         vec['I'] = prior['I0']
-        vec['V'] = vec['V0']
+        vec['V'] = np.exp(vec['lnV0'])
 
 
     def update(self, ctx, time_step, is_forecast, prev, curr):
         """
         """
-        curr['V0'] = prev['V0']
         curr['beta'] = prev['beta']
         curr['p'] = prev['p']
+        curr['lnV0'] = prev['lnV0']
         curr['c'] = prev['c']
         curr['gamma'] = prev['gamma']
 
@@ -56,7 +56,7 @@ class TIV_ODE(Model):
     def can_smooth(self):
         """
         """
-        return {'V0', 'beta', 'p', 'c', 'gamma'}
+        return {'lnV0', 'beta', 'p', 'c', 'gamma'}
 
 
 class PerfectMeasurement(Univariate):
