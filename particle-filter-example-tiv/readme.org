@@ -122,6 +122,34 @@ process defined in =src/tiv.py=. The data provided to the inference is
 in =data/patient-1-censored.ssv= and =--param_plots= tells the script
 that we want visualisations of the marginal posterior distributions.
 
+** TODO The posterior state plots are *very* incorrect
+
+The posterior state plots do not look like they are correct. I.e.,
+they should probably look like a bunch of TIV model solutions mixed
+together. Currently we are using the =pypfilt.summary.ModelCIs= to get
+the posterior credible intervals for the state at different times, we
+are using the records in the table corresponding to the final
+=fs_time=. This still appears to be conditioning on only part of the
+data though.
+
+I have tried to use the =pypfilt.summary.BackcastPredictiveCIs= but no
+corresponding table appeared in the result.
+
+*** Alternative non-solution
+
+If we can't easily record the historical values of the particles
+(after they have seen all of the data). Then we could resample all the
+particles one final time and then simulate forward the process for
+each. This is *not* a good idea, because as soon as you have a
+stochastic process it is no longer sampling from the distribution you
+want.
+
+** TODO Record the parameter estimates in a convenient format
+
+This will be very useful when it comes time to generate a table
+similar to Table 2 from Baccam as a way to talk about how our
+estimates compare to theirs.
+
 ** TODO Use the JSF for the simulation
 
 * Environment
