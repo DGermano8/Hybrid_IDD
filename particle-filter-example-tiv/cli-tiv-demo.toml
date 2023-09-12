@@ -25,7 +25,13 @@ T0 = { name = "constant", args.value = 4E8 }
 I0 = { name = "constant", args.value = 0.0 }
 
 [scenario.inference]
-prior.V0 = { name = "uniform", args.loc = 1.0E-3, args.scale = 1.0 }
+# Some helpful conversions
+# log(1.0E-6) = -13.8
+# log(1.0E-3) = -6.91
+# log(1.0E-2) = -4.61
+# log(1.0E0) = 0.00
+# log(1.0E1) = 2.30
+prior.lnV0 = { name = "uniform", args.loc = -6.91, args.scale = 6.91 }
 prior.beta = { name = "uniform", args.loc = 1.0E-6, args.scale = 1.0E-4 }
 prior.p = { name = "uniform", args.loc = 1.0E-3, args.scale = 1.0E-2 }
 prior.c = { name = "uniform", args.loc = 1.0, args.scale = 1.0E1 }
@@ -43,7 +49,7 @@ resample.threshold = 0.25
 regularisation.enabled = true
 
 [filter.regularisation.bounds]
-V0 = { min = 0.0, max = 1E10 }
+lnV0 = { min = -10.0, max = 10.0 }
 beta = { min = 0.0, max = 1E10 }
 p = { min = 0.0, max = 1E10 }
 c = { min = 0.0, max = 1E10 }

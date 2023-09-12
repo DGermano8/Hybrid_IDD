@@ -103,6 +103,21 @@ Look in the output directory for the results.
 
 ** TODO Estimate rate parameters in terms of their logarithm
 
+*** Files that need modification
+
+These files just need to have variable names updated
+
+- [X] =cli-tiv-demo.toml=
+- [X] =tiv-inference-from-simulation.toml=
+- [ ] =run-inference-from-simulation.py=
+- [ ] =run-inf-cli.py=
+- [ ] =src/inf.py=
+
+The model files need non-trivial modification to ensure that we are
+handling the parameters correctly.
+
+- [ ] =src/tiv.py=
+
 ** TODO Extend the observation model to account for censoring
 
 * Inference example
