@@ -56,7 +56,7 @@ class TIV_ODE(Model):
     def can_smooth(self):
         """
         """
-        return {'beta', 'p', 'c', 'gamma'}
+        return {'V0', 'beta', 'p', 'c', 'gamma'}
 
 
 class PerfectMeasurement(Univariate):
