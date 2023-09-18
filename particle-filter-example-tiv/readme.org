@@ -122,12 +122,6 @@ process defined in =src/tiv.py=. The data provided to the inference is
 in =data/patient-1-censored.ssv= and =--param_plots= tells the script
 that we want visualisations of the marginal posterior distributions.
 
-** TODO Record the parameter estimates in a convenient format
-
-This will be very useful when it comes time to generate a table
-similar to Table 2 from Baccam as a way to talk about how our
-estimates compare to theirs.
-
 ** TODO Use the JSF for the simulation
 
 * Environment
