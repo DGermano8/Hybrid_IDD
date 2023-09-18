@@ -80,7 +80,9 @@ def main():
         if cli_args['verbose']:
             print("Generating state plot")
         pst_state_df = inf_results['posterior_state_df']
-        plt_df = pst_state_df[pst_state_df['name'] == 'V']
+        plt_df = pst_state_df[pst_state_df['unit'] == 'V']
+        plt_df['ymin'] = np.power(10, plt_df['ymin'])
+        plt_df['ymax'] = np.power(10, plt_df['ymax'])
         plt_df_obs = pd.read_csv(cli_args['obs_ssv'], sep = ' ')
         plt_df_obs['y'] = 10**plt_df_obs['value']
         state_p9 = state_plt_p9(plt_df, plt_df_obs)

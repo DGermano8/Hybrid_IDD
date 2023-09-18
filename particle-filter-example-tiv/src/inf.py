@@ -86,8 +86,7 @@ def state_plt_p9(post_df: pd.DataFrame,
             )
             + scale_y_log10(name = "Viral load")
             + scale_x_continuous(name = "Time post infection (days)")
-            + labs(title = "State trajectory",
-                   caption = "Inference on simulated data")
+            + labs(title = "State trajectory")
             + theme_bw())
 
 
@@ -144,8 +143,8 @@ def tiv_run_inference(inf_ctx : pypfilt.Context) -> Dict[str, Any]:
     end_time = inf_ctx.settings['time']['until']
     fit_result = pypfilt.fit(inf_ctx, filename=None)
     pst_df = pd.DataFrame(fit_result.estimation.tables['model_cints'])
-    pst_state_df = pst_df[pst_df['name'].isin(state_names)]
-    pst_state_df = pst_state_df[['time', 'prob','ymin', 'ymax', 'name']]
+    pst_state_df = pd.DataFrame(fit_result.estimation.tables['backcasts'])
+    pst_state_df = pst_state_df[['unit', 'time', 'prob','ymin', 'ymax']]
     pst_param_df = pst_df[pst_df['time'] == end_time]
     pst_param_df = pst_param_df[pst_param_df['name'].isin(param_names)]
     pst_param_df = pst_param_df[['prob','ymin', 'ymax', 'name']]

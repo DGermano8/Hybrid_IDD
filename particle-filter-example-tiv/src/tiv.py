@@ -1,5 +1,6 @@
 import scipy.stats
 import numpy as np
+import pypfilt
 from pypfilt.model import Model
 from pypfilt.obs import Univariate, Obs
 import pdb
@@ -59,6 +60,16 @@ class TIV_ODE(Model):
         return {'lnV0', 'beta', 'p', 'c', 'gamma'}
 
 
+class BackcastStateCIs(pypfilt.summary.BackcastPredictiveCIs):
+    """
+    Summary statistic for the smoothing problem.
+    """
+    def n_rows(self, ctx, forecasting):
+        n_obs_models = len(ctx.component['obs'])
+        n_backcast_times = ctx.summary_count()
+        return len(self._BackcastPredictiveCIs__probs) * n_backcast_times * n_obs_models
+
+
 class PerfectMeasurement(Univariate):
     """
     Measurement model for perfect measurements.
@@ -67,6 +78,7 @@ class PerfectMeasurement(Univariate):
     def distribution(self, ctx, snapshot):
         expect = np.log10(snapshot.state_vec[self.unit])
         return scipy.stats.norm(loc=expect, scale=0.0)
+
 
 class Gaussian(Univariate):
     """
