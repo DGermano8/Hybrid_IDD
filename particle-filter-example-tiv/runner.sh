@@ -13,5 +13,5 @@ do
     if [ ! -d "out/patient-$i" ]; then
 	mkdir out/patient-$i
     fi
-    python run-inf-cli.py --out out/patient-$i --input_toml cli-tiv-demo.toml --obs_ssv data/patient-$i-censored.ssv --param_plots --state_plot
+    python run-inf-cli.py --out out/patient-$i --input_toml cli-tiv-demo.toml --obs_ssv data/patient-$i-censored.ssv --param_plots --state_plot --record_summary
 done

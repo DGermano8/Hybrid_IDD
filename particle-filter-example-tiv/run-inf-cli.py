@@ -40,6 +40,7 @@ def read_cli_args() -> Dict[str, Any]:
     parser.add_argument('--obs_ssv', required=True, help='Input SSV file with data')
     parser.add_argument('--param_plots', action='store_true', help='Generate parameter plots')
     parser.add_argument('--state_plot', action='store_true', help='Generate state plot')
+    parser.add_argument('--record_summary', action='store_true', help='Summarise the estimates')
     parser.add_argument('--verbose', action='store_true', help='Verbose output')
     args = parser.parse_args()
     return vars(args)
@@ -88,6 +89,12 @@ def main():
         state_p9 = state_plt_p9(plt_df, plt_df_obs)
         state_p9.save(f"{out_dir}/demo-state-trajectory.png",
                       height = 4.1, width = 5.8)
+
+    if cli_args['record_summary']:
+        if cli_args['verbose']:
+            print("Summarising the parameter estimates")
+        pt_df = inf_results['posterior_point_ests']
+        pt_df.to_csv(f"{out_dir}/demo-point-estimates.csv")
 
 if __name__ == "__main__":
     main()

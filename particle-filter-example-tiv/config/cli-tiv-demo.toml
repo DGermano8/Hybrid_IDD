@@ -38,8 +38,8 @@ prior.c = { name = "uniform", args.loc = 1.0, args.scale = 1.0E1 }
 prior.gamma = { name = "uniform", args.loc = 1.0, args.scale = 1.0E1 }
 summary.tables.model_cints.component = "pypfilt.summary.ModelCIs"
 summary.tables.model_cints.credible_intervals = [10, 20, 30, 40, 50, 60, 70, 80, 90]
-summary.tables.forecasts.component = "pypfilt.summary.PredictiveCIs"
-summary.tables.forecasts.credible_intervals = [10, 20, 30, 40, 50, 60, 70, 80, 90]
+summary.tables.point_ests.component = "pypfilt.summary.ModelCIs"
+summary.tables.point_ests.credible_intervals = [0, 95]
 
 [filter]
 particles = 20000

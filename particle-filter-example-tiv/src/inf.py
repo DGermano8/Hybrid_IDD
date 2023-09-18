@@ -148,7 +148,11 @@ def tiv_run_inference(inf_ctx : pypfilt.Context) -> Dict[str, Any]:
     pst_param_df = pst_df[pst_df['time'] == end_time]
     pst_param_df = pst_param_df[pst_param_df['name'].isin(param_names)]
     pst_param_df = pst_param_df[['prob','ymin', 'ymax', 'name']]
+    pst_point_df = pd.DataFrame(fit_result.estimation.tables['point_ests'])
+    pst_point_df = pst_point_df[pst_point_df['time'] == end_time]
+    pst_point_df = pst_point_df[['prob', 'ymin', 'ymax', 'name']]
     return {'posterior_state_df': pst_state_df,
             'posterior_param_df': pst_param_df,
+            'posterior_point_ests': pst_point_df,
             'end_time': end_time,
             'marginals': mrgs}

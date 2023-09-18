@@ -1,8 +1,8 @@
-import scipy.stats
+import scipy.stats              # type: ignore
 import numpy as np
-import pypfilt
-from pypfilt.model import Model
-from pypfilt.obs import Univariate, Obs
+import pypfilt                  # type: ignore
+from pypfilt.model import Model # type: ignore
+from pypfilt.obs import Univariate, Obs # type: ignore
 import pdb
 
 class TIV_ODE(Model):
