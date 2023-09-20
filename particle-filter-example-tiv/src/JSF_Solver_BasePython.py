@@ -2,6 +2,8 @@
 import random
 import math
 
+random.seed(1)
+
 def JumpSwitchFlowSimulator(x0, rates, stoich, times, options):
     """
     x0 :: State                 # state at time zero.
@@ -57,8 +59,11 @@ def JumpSwitchFlowSimulator(x0, rates, stoich, times, options):
 
     # initialise solution arrays
 
-    X = [[X0[i]] + [0.0] * (overFlowAllocation - 1) for i in range(nCompartments)]
-    TauArr = [0.0] * overFlowAllocation
+    # X = [[X0[i]] + [0.0] * (overFlowAllocation - 1) for i in range(nCompartments)]
+    # TauArr = [0.0] * overFlowAllocation
+
+    X = [[X0[i]] for i in range(nCompartments)]
+    TauArr = [0.0]
     iters = 0
 
     # Track Absolute time
@@ -75,8 +80,8 @@ def JumpSwitchFlowSimulator(x0, rates, stoich, times, options):
     # import pdb; pdb.set_trace()
     while ContT < tFinal:
 
-        Xprev = [X[i][iters] for i in range(len(X))]
         Dtau = dt
+        Xprev = [X[i][iters] for i in range(len(X))]
         Props = rates(Xprev, ContT)
 
         # check if any states change in this step
@@ -109,12 +114,13 @@ def JumpSwitchFlowSimulator(x0, rates, stoich, times, options):
 
             firstStayWhileLoop = False
             if TimePassed > 0:
-                Props = rates(Xprev, AbsT)
+                # Props = rates(Xprev, AbsT)
+                Props = rates(Xcurr, AbsT)
 
-            if any([p == 0 for p in Props]):
-                import pdb; pdb.set_trace()
+            # if any([p == 0 for p in Props]):
+                # import pdb; pdb.set_trace()
             integralStep = ComputeIntegralOfFiringTimes(Dtau, Props, rates, Xprev, Xcurr, AbsT)
-            integralOfFiringTimes = ArrayPlusAB(integralOfFiringTimes,integralStep)
+            integralOfFiringTimes = ArrayPlusAB(integralOfFiringTimes,ArrayMultiplyAB(integralStep, discCompartment))
 
             # If any of the components have just become discrete, we need to update the integralOfFiringTimes and randTimes
             if correctInteger == 1:
@@ -132,23 +138,26 @@ def JumpSwitchFlowSimulator(x0, rates, stoich, times, options):
                 for rand, integral, disc in zip(randTimes, integralOfFiringTimes, discCompartment)
             ]
 
-
             if NNZ(firedReactions) > 0:
                 # Identify which reactions have fired
-                tauArray = ComputeFiringTimes(firedReactions,integralOfFiringTimes,randTimes,Props,dt,nRates,integralStep)
+                tauArray = ComputeFiringTimes(firedReactions,integralOfFiringTimes,randTimes,Props,Dtau,nRates,integralStep)
 
                 if NNZ(tauArray) > 0:
 
                     # Update the discrete compartments
-                    Xcurr, Xprev, integralOfFiringTimes, integralStep, randTimes, TimePassed, AbsT, DtauMin = ImplementFiredReaction(tauArray ,integralOfFiringTimes,randTimes,Props,rates,integralStep,TimePassed, AbsT, X, iters, nu, dXdt, OriginalDoCont)
-
+                    Xcurr, Xprev, integralOfFiringTimes, integralStep, randTimes, TimePassed, AbsT, DtauMin = ImplementFiredReaction(tauArray ,integralOfFiringTimes,randTimes,Props,rates,integralStep,TimePassed, AbsT, X, iters, nu, dXdt, OriginalDoCont, discCompartment)
+                    
+                    # print('DtauMin = ', DtauMin)
                     iters = iters + 1
                     for i in range(len(X)):
-                        try:
-                            X[i][iters] = Xcurr[i]
-                        except IndexError:
-                            import pdb; pdb.set_trace()
-                    TauArr[iters] = AbsT
+                        # try:
+                        # X[i][iters] = Xcurr[i]
+                        X[i].append(Xcurr[i])
+                        
+                        # except IndexError:
+                        #     import pdb; pdb.set_trace()
+                    # TauArr[iters] = AbsT
+                    TauArr.append(AbsT)
 
                     Dtau = Dtau - DtauMin
 
@@ -160,11 +169,14 @@ def JumpSwitchFlowSimulator(x0, rates, stoich, times, options):
             if TimePassed >= DtauContStep:
                 stayWhile = False
 
+        # print('2: Xcurr = ', Xcurr)
         iters = iters + 1
         ContT = ContT + DtauContStep
-        TauArr[iters] = ContT
+        # TauArr[iters] = ContT
+        TauArr.append(ContT)
         for i in range(len(X)):
-            X[i][iters] = X[i][iters - 1] + (DtauContStep - TimePassed) * (dXdt[i] * DoCont[i])
+            # X[i][iters] = X[i][iters - 1] + (DtauContStep - TimePassed) * (dXdt[i] * DoCont[i])
+            X[i].append(X[i][iters - 1] + (DtauContStep - TimePassed) * (dXdt[i] * DoCont[i]))
 
         if correctInteger == 1:
             pos = NewDiscCompartmemt.index(max(NewDiscCompartmemt))
@@ -177,36 +189,49 @@ def JumpSwitchFlowSimulator(x0, rates, stoich, times, options):
                     randTimes[jj] = random.random()
             NewDiscCompartmemt[pos] = 0
 
-    trimmed_TauArr = TauArr[:iters + 1]
-    trimmed_X = [X_row[:iters + 1] for X_row in X]
-
-
-    return trimmed_X, trimmed_TauArr
+    # trimmed_TauArr = TauArr[:iters + 1]
+    # trimmed_X = [X_row[:iters + 1] for X_row in X]
+    # return trimmed_X, trimmed_TauArr
+    # import pdb; pdb.set_trace()
+    return X, TauArr
 
 def ComputeFiringTimes(firedReactions,integralOfFiringTimes,randTimes,Props,dt,nRates,integralStep):
     tauArray = [0.0] * nRates
     for kk in range(nRates):
         if firedReactions[kk]:
-            ExpInt = math.exp(-(integralOfFiringTimes[kk] - integralStep[kk]))
-            Integral = math.log((1 - randTimes[kk]) / ExpInt)
-            # if Props[kk] == 0:
-            #     import pdb; pdb.set_trace()
-            tau_val_1 = Integral / (-1 * Props[kk])
 
-            tau_val_2 = -1
+            Integral_t0_ti = (-1.0*(integralOfFiringTimes[kk] - integralStep[kk]))
+            Integral = Integral_t0_ti - math.log((1 - randTimes[kk]))
+            tau_val_1 = Integral / (Props[kk])
+
             tau_val = tau_val_1
-            if tau_val_1 < 0:
-                tau_val_1 = abs(tau_val_1)
-                if abs(tau_val_1) < dt ** 2:
-                    tau_val_2 = abs(tau_val_1)
-                tau_val_1 = 0
-                tau_val = max(tau_val_1, tau_val_2)
+
+            # ExpInt = math.exp(-(integralOfFiringTimes[kk] - integralStep[kk]))
+
+            # # if ExpInt == 0:
+            # #     import pdb; pdb.set_trace()
+            # Integral = math.log((1 - randTimes[kk]) / ExpInt)
+            # # if Props[kk] == 0:
+            # #     import pdb; pdb.set_trace()
+            # if Props[kk] == 0:
+            #     tau_val_1 = 10**(-16)
+            # else:
+            #     tau_val_1 = Integral / (-1 * Props[kk])
+
+            # tau_val_2 = -1
+            # tau_val = tau_val_1
+            # if tau_val_1 < 0:
+            #     tau_val_1 = abs(tau_val_1)
+            #     if abs(tau_val_1) < dt ** 2:
+            #         tau_val_2 = abs(tau_val_1)
+            #     tau_val_1 = 0
+            #     tau_val = max(tau_val_1, tau_val_2)
 
             tauArray[kk] = tau_val
 
     return tauArray
 
-def ImplementFiredReaction(tauArray ,integralOfFiringTimes,randTimes,Props,rates,integralStep,TimePassed, AbsT, X, iters, nu, dXdt, OriginalDoCont):
+def ImplementFiredReaction(tauArray ,integralOfFiringTimes,randTimes,Props,rates,integralStep,TimePassed, AbsT, X, iters, nu, dXdt, OriginalDoCont,discCompartment):
     tauArray = [float('inf') if tau == 0.0 else tau for tau in tauArray]
 
     DtauMin = min(tauArray)
@@ -218,9 +243,9 @@ def ImplementFiredReaction(tauArray ,integralOfFiringTimes,randTimes,Props,rates
     Xcurr = [X[i][iters] + nu[pos][i] + DtauMin * (dXdt[i] * OriginalDoCont[i]) for i in range(len(X))]
     Xprev = [X[i][iters] for i in range(len(X))]
 
-    integralOfFiringTimes = [integral - step for integral, step in zip(integralOfFiringTimes, integralStep)]
+    integralOfFiringTimes = [integral - step*disc for integral, step, disc in zip(integralOfFiringTimes, integralStep, discCompartment)]
     integralStep = ComputeIntegralOfFiringTimes(DtauMin, Props, rates, Xprev, Xcurr, AbsT)
-    integralOfFiringTimes = [integral + step for integral, step in zip(integralOfFiringTimes, integralStep)]
+    integralOfFiringTimes = [integral + step*disc for integral, step, disc in zip(integralOfFiringTimes, integralStep, discCompartment)]
 
     integralOfFiringTimes[pos] = 0.0
     randTimes[pos] = random.random()
@@ -336,3 +361,6 @@ def NNZ(Array):
 def MatrixDOTArray(Matrix,Array):
     result = [sum(row[i] * Array[i] for i in range(len(Array))) for row in Matrix]
     return result
+def ArrayMultiplyAB(ArrayA, ArrayB):
+    ArrayAB = [a * b for a, b in zip(ArrayA, ArrayB)]
+    return ArrayAB
