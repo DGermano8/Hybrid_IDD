@@ -10,7 +10,10 @@ import pandas as pd
 import plotnine as p9
 from plotnine import *
 import pdb
+import random
 
+# random.seed(4)
+random.seed(6)
 
 def run_simulation(instance):
     """
@@ -27,11 +30,14 @@ def run_simulation(instance):
         np.arange(num_reps),
         sim_df.shape[0] // num_reps
     )
+
+    outDit = 'out_5'
+
     # write this data frame to a csv file
-    sim_df.to_csv('out/sim_df.csv', index = False)
+    sim_df.to_csv(outDit + '/sim_df.csv', index = False)
 
     # write this data to a ssv file
-    sim_df.to_csv('out/sim_df.ssv', sep = ' ', index = False)
+    sim_df.to_csv(outDit + '/sim_df.ssv', sep = ' ', index = False)
 
     return sim_df
 
@@ -76,7 +82,7 @@ def main():
         p.save(plot_path)
         plots.append(p)
 
-    p9.save_as_pdf_pages(plots, filename = "out/demo-simulations.pdf")
+    p9.save_as_pdf_pages(plots, filename = "out_5/demo-simulations.pdf")
 
 
 if __name__ == '__main__':
