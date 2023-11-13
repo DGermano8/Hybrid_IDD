@@ -1,0 +1,70 @@
+[components]
+time = "pypfilt.Scalar"
+sampler = "pypfilt.sampler.Independent"
+summary = "pypfilt.summary.HDF5"
+
+[time]
+start = 0.0
+until = 20.0
+
+[prior]
+R0 = { name = "uniform", args.low = 2, args.high = 3 }
+gamma = { name = "uniform", args.low = 0.5, args.high = 1 }
+
+[model]
+population_size = 100
+
+[files]
+input_directory = "."
+output_directory = "."
+temp_directory = "."
+delete_cache_file_before_forecast = true
+delete_cache_file_after_forecast = true
+
+[filter]
+particles = 100
+prng_seed = 2001
+history_window = 5
+resample.threshold = 0.25
+regularisation.enabled = true
+
+[summary]
+only_forecasts = false
+
+[summary.tables]
+model_cints.component = "pypfilt.summary.ModelCIs"
+forecasts.component = "pypfilt.summary.PredictiveCIs"
+sim_obs.component = "pypfilt.summary.SimulatedObs"
+sim_obs.observation_unit = "cases"
+
+[observations.cases]
+model = "pypfilt.examples.sir.SirObs"
+observation_period = 1
+parameters.p = 0.8
+
+[scenario.CTMC]
+name = "SIR CTMC"
+components.model = "pypfilt.examples.sir.SirCtmc"
+time.steps_per_unit = 1
+
+[scenario.DTMC]
+name = "SIR DTMC"
+components.model = "pypfilt.examples.sir.SirDtmc"
+time.steps_per_unit = 100
+
+[scenario.ODE_Euler]
+name = "SIR ODE Euler"
+components.model = "pypfilt.examples.sir.SirOdeEuler"
+filter.history_window = -1
+time.steps_per_unit = 100
+
+[scenario.ODE_RK]
+name = "SIR ODE RK"
+components.model = "pypfilt.examples.sir.SirOdeRk"
+filter.history_window = -1
+time.steps_per_unit = 1
+
+[scenario.SDE]
+name = "SIR SDE"
+components.model = "pypfilt.examples.sir.SirSde"
+time.steps_per_unit = 100

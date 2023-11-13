@@ -1,0 +1,62 @@
+[components]
+model = "pypfilt.examples.predation.LotkaVolterra"
+time = "pypfilt.Scalar"
+sampler = "pypfilt.sampler.Independent"
+summary = "pypfilt.summary.HDF5"
+
+[time]
+start = 0
+until = 15
+steps_per_unit = 1
+
+[prior]
+x = { name = "uniform", args.low = 0.5, args.high = 1.5 }
+y = { name = "uniform", args.low = 0.2, args.high = 0.4 }
+alpha = { name = "uniform", args.low = 0.6, args.high = 0.8 }
+beta = { name = "uniform", args.low = 1.2, args.high = 1.4 }
+gamma = { name = "uniform", args.low = 0.9, args.high = 1.1 }
+delta = { name = "uniform", args.low = 0.9, args.high = 1.1 }
+
+[summary]
+save_history = true
+metadata.packages = [ "matplotlib" ]
+
+[summary.tables]
+model_cints.component = "pypfilt.summary.ModelCIs"
+model_cints.credible_intervals = [ 0, 50, 95 ]
+forecasts.component = "pypfilt.summary.PredictiveCIs"
+forecasts.credible_intervals = [ 0, 50, 95 ]
+
+[filter]
+particles = 1000
+prng_seed = 42
+history_window = -1
+resample.threshold = 0.25
+regularisation.enabled = true
+
+[filter.regularisation.bounds]
+x = { min = 0, max = 2 }
+y = { min = 0, max = 2 }
+alpha = { min = 0, max = 2}
+beta = { min = 0, max = 2}
+gamma = { min = 0, max = 2}
+delta = { min = 0, max = 2}
+
+[files]
+input_directory = "."
+output_directory = "."
+delete_cache_file_before_forecast = true
+delete_cache_file_after_forecast = true
+
+[scenario.example]
+name = "Example Scenario"
+
+[scenario.example.observations.x]
+model = "pypfilt.examples.predation.ObsModel"
+file = "predation-counts-x.ssv"
+parameters.sdev = 0.2
+
+[scenario.example.observations.y]
+model = "pypfilt.examples.predation.ObsModel"
+file = "predation-counts-y.ssv"
+parameters.sdev = 0.2

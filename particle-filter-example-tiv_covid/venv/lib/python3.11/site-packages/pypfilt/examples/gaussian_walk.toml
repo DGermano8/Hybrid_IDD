@@ -1,0 +1,41 @@
+[components]
+model = "pypfilt.examples.simple.GaussianWalk"
+time = "pypfilt.Scalar"
+sampler = "pypfilt.sampler.LatinHypercube"
+summary = "pypfilt.summary.HDF5"
+
+[time]
+start = 0.0
+until = 30.0
+steps_per_unit = 1
+
+[prior]
+x = { name = "uniform", args.loc = 10.0, args.scale = 10.0 }
+
+[observations.x]
+model = "pypfilt.examples.simple.GaussianObs"
+# file = "simple-x-obs.ssv"
+parameters.sdev = 0.2
+
+[summary.tables]
+model_cints.component = "pypfilt.summary.ModelCIs"
+model_cints.credible_intervals = [ 0, 50, 95 ]
+sim_obs.component = "pypfilt.summary.SimulatedObs"
+sim_obs.observation_unit = "x"
+
+[filter]
+particles = 20
+prng_seed = 42
+history_window = -1
+resample.threshold = 0.25
+regularisation.enabled = true
+filter.regularisation.bounds.x = { min = 0, max = 30 }
+
+[files]
+input_directory = "."
+output_directory = "."
+delete_cache_file_before_forecast = true
+delete_cache_file_after_forecast = true
+
+[scenario.example]
+name = "Example Scenario"

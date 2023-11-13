@@ -1,0 +1,79 @@
+Metadata-Version: 2.1
+Name: pypfilt
+Version: 0.8.0
+Summary: Bootstrap particle filter for epidemic forecasting
+Home-page: https://bitbucket.org/robmoss/particle-filter-for-python/
+Author: Rob Moss
+Author-email: rgmoss@unimelb.edu.au
+License: BSD 3-Clause License
+Project-URL: Documentation, https://pypfilt.readthedocs.io/en/latest/
+Project-URL: Changelog, https://pypfilt.readthedocs.io/en/latest/changelog.html
+Platform: any
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Scientific/Engineering :: Mathematics
+Requires-Python: >=3.7
+Description-Content-Type: text/x-rst
+License-File: LICENSE
+Requires-Dist: h5py (~=3.0)
+Requires-Dist: lhs (~=0.3)
+Requires-Dist: numpy (~=1.17)
+Requires-Dist: scipy (~=1.4)
+Requires-Dist: tomli (~=2.0)
+Requires-Dist: tomli-w (~=1.0)
+Provides-Extra: plot
+Requires-Dist: matplotlib (>=3.4) ; extra == 'plot'
+
+Bootstrap particle filter for epidemic forecasting
+==================================================
+
+|version| |docs| |tests| |coverage|
+
+Description
+-----------
+
+A bootstrap particle filter that can be used for recursive Bayesian estimation and forecasting.
+See the `online documentation <https://pypfilt.readthedocs.io/>`_ for tutorials, how-to guides, and API documentation.
+
+License
+-------
+
+The code is distributed under the terms of the `BSD 3-Clause license <https://opensource.org/licenses/BSD-3-Clause>`_ (see
+``LICENSE``), and the documentation is distributed under the terms of the
+`Creative Commons BY-SA 4.0 license
+<http://creativecommons.org/licenses/by-sa/4.0/>`_.
+
+Installation
+------------
+
+To install the latest release::
+
+    pip install pypfilt
+
+To install the latest release with plotting support (requires `matplotlib <http://matplotlib.org/>`_)::
+
+    pip install pypfilt[plot]
+
+To install the latest development version, clone this repository and run::
+
+    pip install .
+
+.. |version| image:: https://badge.fury.io/py/pypfilt.svg
+   :alt: Latest version
+   :target: https://pypi.org/project/pypfilt/
+
+.. |docs| image::  https://readthedocs.org/projects/pypfilt/badge/
+   :alt: Documentation
+   :target: https://pypfilt.readthedocs.io/
+
+.. |tests| image:: https://gitlab.unimelb.edu.au/rgmoss/particle-filter-for-python/badges/master/pipeline.svg
+   :alt: Test cases
+   :target: https://gitlab.unimelb.edu.au/rgmoss/particle-filter-for-python
+
+.. |coverage| image:: https://gitlab.unimelb.edu.au/rgmoss/particle-filter-for-python/badges/master/coverage.svg
+   :alt: Test coverage
+   :target: https://gitlab.unimelb.edu.au/rgmoss/particle-filter-for-python

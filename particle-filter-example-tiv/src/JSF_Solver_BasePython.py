@@ -193,6 +193,9 @@ def JumpSwitchFlowSimulator(x0, rates, stoich, times, options):
     # trimmed_X = [X_row[:iters + 1] for X_row in X]
     # return trimmed_X, trimmed_TauArr
     # import pdb; pdb.set_trace()
+
+    # print('T = ', X[0][-1], ' I = ', X[1][-1], ' V = ', X[2][-1])
+    # print('DoDisc = ', DoDisc)
     return X, TauArr
 
 def ComputeFiringTimes(firedReactions,integralOfFiringTimes,randTimes,Props,dt,nRates,integralStep):
@@ -272,7 +275,8 @@ def UpdateCompartmentRegime(dt, Xprev, Dtau, Props, nu, SwitchingThreshold, DoDi
     NewDiscCompartmemt = [0] * nCompartments
 
     # Identify if a state has just become discrete
-    if NNZ(NewDoDisc) > NNZ(DoDisc):
+    # if NNZ(NewDoDisc) > NNZ(DoDisc):
+    if any([x != y for x, y in zip(NewDoDisc, DoDisc)]):
         # Identify which compartment has just switched
         pos = None
         for i, (new_do_disc, do_disc) in enumerate(zip(NewDoDisc, DoDisc)):
@@ -286,7 +290,7 @@ def UpdateCompartmentRegime(dt, Xprev, Dtau, Props, nu, SwitchingThreshold, DoDi
 
 
 
-            dXdt_min = min(dXdt)
+            # dXdt_min = min(dXdt)
             Xprev_pos = Xprev[pos]
             rounded_Xprev_pos = round(Xprev_pos)
             dXdt_pos = dXdt[pos]
@@ -297,6 +301,12 @@ def UpdateCompartmentRegime(dt, Xprev, Dtau, Props, nu, SwitchingThreshold, DoDi
             if Dtau < dt:
                 NewDiscCompartmemt[pos] = 1
                 correctInteger = 1
+        else:
+            contCompartment = NewcontCompartment
+            discCompartment = NewdiscCompartment
+            DoCont = NewDoCont
+            DoDisc = NewDoDisc
+        # correctInteer = 1
     else:
         contCompartment = NewcontCompartment
         discCompartment = NewdiscCompartment
